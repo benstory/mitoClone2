@@ -1,6 +1,6 @@
 # mitoClone2 R Package
 
-The tool is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing.
+The tool is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing. It is a new and improved version of the package, mitClone, originally described by [Velten et al. (2021)](https://www.nature.com/articles/s41467-021-21650-1).
 
 ## 1. System Requirements:
    - Linux/Mac
@@ -18,6 +18,7 @@ The software has been successfully implemented and tested using: Python 3.6.5, R
 ## 2. Installation
 For manual package installation use the command:
 
+``` r
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install('mitoClone2')
@@ -40,12 +41,12 @@ After installing all dependencies, open an R session and load the library using 
 library(mitoClone2)
 ```
 
-Please make sure to set your environmental python variables correctly for use of gurobi. See for example the `python_env` parameter used in the `muta_cluster` function.
+*Notes:*
+Please make sure to set your environmental python variables correctly for use of gurobi. See for example the `python_env` parameter.
 
 Again please view the R vignettes for usage possibilities. See the following webpages (located in the cloned github folder `inst/doc`) for various tutorials.
 
    - **overview**: Instructions on how to filter mitochondrial mutations using either a blacklist or shared mutations across samples/patients (typical runtime: > 10 minutes)
-   - **calling**: Instructions on how to filter mitochondrial mutations if only data from a single individual is available (typical runtime: > 5 minutes )
    - **clustering**: Instructions on how to cluster mutations into a clonal hierarchy and how to assign cells to clones (typical runtime: > 2 hours)
 
 
