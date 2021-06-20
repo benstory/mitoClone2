@@ -1,0 +1,201 @@
+---
+title: "Variant calling"
+author: "Benjamin Story"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{Variant calling}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Overview
+In this vignette, we demonstrate the ability of mitoClone2 to identify mitochondrial variants from single-cell sequencing data of a single or multiple individuals without any *a priori* knowledge of pre-existing variants by capitalizing on either an extensive blacklist (that removes known/potential false-positive signals) OR information shared across multiple individuals. We note here that of these methods, the second, is the most powerful. The latter strategy relies on the assumption that biological noise (e.g. RNA editing) and technical noise (arising during either library preparation, RNA sequencing, read processing, or alignment steps of the experiment) should be consistent across samples from different individuals. On this end, each individual sample can then act as essentially a technical/pseudo-replicate for identification and elimination the mentioned artifacts. In situations where only a sample from only one invidiual is analyzed, we fall back on our standard filtering method using certain parameters but in this case reinforced by pre-constructed blacklist including information related to homo-polymers, repeat regions, RNA editing sites, and known sequencing artifacts.
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(mitoClone2)
+```
+
+### Introduction
+A major untapped resource in identifying clonal populations in single-cells can be found in the mitochondrial reads. Often discarded or used a marker for bad cells, the high mutation rate and coverage of the mitochondria makes it a prime piece of real estate for detecting genetic differences among cells. Another important note of biological importance is that in many cases multiple mitochondria exist within individual cells, each in turn containing multiple copies of the mitochondrial genome. Thus the heterogeneity of mitochondria does not follow the standard Mendelian classication of homo/heterozygous mutations. The term used to describe this phenomenon is heteroplasmy - which is defined as the presence of more than one organellar genome within a single cell.
+
+### Package goals
+The primary goal of the package is to extract and analyze mitochondrial variants from single-cell RNA-seq data. The method should also work equally well with single-cell DNA-seq data. Although the majority of functions provided by the package should work with BAM files from bulk sequencing experiments, the majority of core functionality will be lost.
+
+### Genome availability
+There is built in compatiblity with the hg38/hg19 human genomes and mm10 mouse genome. 
+IMPORTANT: The mitochondrial genome sequence used in the UCSC hg19 reference is different than that used for NCBI's GRCh37. GRCh37 uses the same reference as hg38/GRCh38 so make sure to check your relevant fasta files to verify the expected length of your mitochondria. The lengths are as follows: UCSC hg38 (16569 bp), UCSC hg19 (16571 bp), and UCSC mm10 (16299 bp).
+
+## Input data 
+Before we can begin addressing the different aspects of filtering and identifying bonafide variants, it is important to import your data in the appropriate format. In our case, we rely most heavily on the pre-existing structure defined by the `deepSNV::bam2R()` function which produces 22 columns matrix with a number of rows corresponding to ranges provided as input parameters. IMPORTANT: For the majority of this vignette, the assumption is that we are working with the entire mitochondrial genome of a given organism. You are free to input any position by mutation matrix to the filtering and clustering functions, but keep in mind certain parameters should be adjusted.
+
+### Counting nucleotides from BAM files
+To generate your count tables we have provided two functions to do so:
+Firstly, these tables can be created from a list of bam files using the function `baseCountsFromBamList` this function takes a list of bam files which can be created with `list.files()`. This function assumes that each individual single cell is represented by a single bam file.
+Alternatively, with our recent updates you can now pull variants directly from a 10x Genomics multiplexed BAM file using `bam2R_10x`. This relies on using the `CB` bam tag present within the BAM file to distinguish individual cells. Two helpful suggestions for this process are to initially subset BAM files for reads located on the mitochondrial chromosome and also to depuplicate reads if UMIs are present. You may also choose to count up the different nucleotides using a different method. In such cases, the only requirements for downstream mutation calling functions is that your `baseCounts` object be an R `list` that contains 5 to 8 columns where rows represent genomic positionsand columns represent base calls (i.e. A,G,C,T,-,N,INS,DEL)
+
+### Counting function examples and explanations
+The **basic function** provided is `baseCountsFromBamList` which reads in BAM files from a list and has four parameters: 
+
+*    `bamfiles` = This is simply a list of bamfiles for which you would like to count the number of nucleotide at each genomic position from the `sites` parameter.
+
+*    `sites` = This is the chromosome location that you will count variants from the default is the hg38 mitochondrial genome which starts at position 1 and has a length of 16569 bp.
+
+*    `ncores` The number of threads used to count up reads from your bamfiles. If you have thousands of input BAM files and your system can handle it, reading in multiple BAM files at once will help speed things up. Default: 8.
+
+*    `ignore_nonstandard` ignores bascalls that are not an A, G, C, T, or N (unknown). A user can enable this if their reads tend to have a lot of spliced reads (which are likely erroneous) or insertions/deletions. Default: FALSE.
+
+Note: Be aware that this function calls `deepSNV::bam2R()` with default parameters.
+
+```{r baseCounts_bamlist}
+## example using function for a list of BAM files
+baseCounts <- baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
+print(length(baseCounts))
+print(head(baseCounts[[1]][13267:13277,]))
+```
+
+The **next function** is for reading in a multiplexed BAM file `bam2R_10x` takes multiple parameters: 
+
+*    `file` = This is a string containg the path for which you would like to count the number of nucleotide at each genomic position from the `sites` parameter for each cell barcode.
+
+*    `sites` = This is the chromosome location that you will count variants from the default is the hg38 mitochondrial genome which has a sie of 16569 bp. Again it is very important that you provide the appropriate chromosome names relative to your BAM file.
+
+*    `ncores` The number of threads used to combine and summarize all the counts from your BAM file. In contrast to the previous function this parameter will not provide a dramatic speed boost. Default: 8.
+
+*    `ignore_nonstandard` ignores bascalls that are not an A, G, C, T, or N (unknown). A user can enable this if their reads tend to have a lot of spliced reads (which are likely erroneous) or insertions/deletions. Default: FALSE.
+
+```{r baseCounts_10x_BAM}
+## example using function for a multiplexed BAM files where cell barcodes contained within 'CB' tag
+baseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
+print(length(baseCounts))
+print(head(baseCounts[[1]][13267:13277,]))
+```
+
+## Calling and filtering variants
+The next step of the analysis is to take your counts of each nucleotide in each cell and identify variants that are present. A major barrier in this process is the inherent noise present in single cell datasets. Although we will only briefly discuss the important aspects of filtering this is by far the most crucial step of the analysis. The prevelance of mitochondrial variants is highly variable, in some cases more or less depending on the dataset. It is wise to adjust the parameters in order to tailor them to each particular dataset - one size fits all does not apply here. It is critical to choose optimal parameters for a dataset and experimentation is often necessary.
+
+### Calling mutations based on a blacklist
+The simplest way to identify variants, beyond simply enriching for those that are present in only a fraction of the population, is by removing detected variants that are likely to be caused by noise (as previously discussed). One conservative approach to accomplish this is to simply remove all variants that overlap with problematic sites. As a side note, this type of approach will decrease false positive hits but may incidentally increase false negative hits. This type of method is used when a you only have a single sample from one individual/timepoint.
+
+The function `mutationCallsFromBlacklist` performs fltering and then removes blacklisted variants. Parameters:
+
+*  `lim.cov` is the minimum number of reads overlapping a site in a given single cell for it to be considered covered. The default value is 20.
+
+*   `min.af `is the minimal allele frequency for a site to considered mutant in an single cell. Depending on the dataset this value may be higher or lower as illustrated in the examples at the end of vignette. The default value is 0.2.
+
+*   `universal.var.cells` is the number of cells which must be mutant for a given variant to filtered out. In this case mutations that are in the vast majority of cells, likely germline mutations, may be removed. The default setting for this 95% of all cells. However, again this parameter should be adjusted based on the number and type of cells in a given analysis.
+
+*   `min.af.universal` is the parameter used in conjunction with the previous parameter which sets a threshold as to how high the allele frequency must be in a cell to qualify it as mutant. By default this parameter is identical to `min.af` but if needed it can be changed.
+
+*   `min.num.samples` is the number of cells that must be considered mutant for a given variant for that variant to be included. Again this value is highly dependent on the number and type of cells present in a given dataset. Default is set to 1% of cells.
+
+*   `blacklists` is the list of blacklists to use for filtering. The parameter should be a named list where each element in the list is a GRanges object. The GRanges object should contain the genomic coordinates of variants to be excluded from the analysis. In the provided blacklist, we have `three` which is stretchs of homopolymers on the mitochondrial chromosome of 3 bp or greater length, `masked` which are regions masked in the Refseq or UCSC genome releases (likely repetitive elements), regions identified from a previous study (these can be excluded in most cases), and `rnaEDIT` which are RNA editing sites from the REDIportal. **In all cases, these are relative to the 'hg38' genome coordinates** and should not be used with other genomes without a liftOver step.
+
+
+### Calling mutations based on mutations shared within a cohort
+The next way of filtering is a bit more intuitive. First of all we make the following important assumption: **We are comparing similar sets of cells between patients/timepoints and the only differences between them are biological (thus all technical steps are identical).** Under this assumption, any technical noise as described previously (e.g. sequencing artifacts, alignment errors) and even low levels of biological noise (e.g. RNA-editing) should be mostly preserved between samples. Thus, by identifying all shared features (i.e. variants) between two samples being compared, we can exclude all this noise and identify true somatic variants. TL;DR: We ask the question - which variants are only present in a single individual and not in others?
+
+The function `mutationCallsFromCohort` performs filtering based on mutations shared across experiments/samples and then retrieves variants that are only enriched in single patients. Parameters:
+
+*   `MINREADS` is the minimum number of reads overlapping a site in a given single cell for it to be considered covered. The default value is 5.
+
+*   `MINCELL` is the minimum number of total cells across all datasets that must have **mutant** allele coverage over the target site. The default value is 20.
+
+*   `MINFRAC` is the minimal allele frequency for a site to considered mutant in an single The default value is 0.1.
+
+*   `MINCELLS.PATIENT` is the minimum number of cells within an individual patient that must have mutant coverage over the target site. The default value is 10.
+
+*   `MINRELATIVE.PATIENT` is the minimal allele frequency for a site to considered mutant in an single cell within a single patient. The default value is 0.01.
+
+*   `MINRELATIVE.OTHER`  is the minimal allele frequency for a site to considered mutant in an single cell within other patient (in contrast to to the previous parameter). If so, then the mutation is excluded as it is considered shared between two more more samples/patients. The default value is 0.1.
+
+*   `USE.REFERENCE` The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation below. Default is to have this set to TRUE. If set to FALSE the most abundant nucleotide across all cells at a given position will be considered reference. This may very based on the samples provided to function and thus may differ from run to run if this is set to FALSE.
+
+*   `genome` The mitochondrial genome reference used for the sample(s) being investigated. Please note that this is the UCSC standard chromosome sequence. It is VITAL to double check that the proper genome and sites options are provided that are congruent with the annotations of your bam file. Default: hg38.
+
+
+To exemplify the use of these functions we are going to recreate figures from a previously published data set. In this case, one of the first papers to recognize the use of mitochondrial variants in single-cell sequencing. Ludwig et al., 2019 Lineage Tracing in Humans Enabled by Mitochondrial Mutations and Single-Cell Genomics. *Cell*. 2019 Mar 7;176(6):1325-1339.e22. doi: 10.1016/j.cell.2019.01.022 https://pubmed.ncbi.nlm.nih.gov/30827679/.
+
+In this example, as a proof-of-concept, the experimenters used donor hematopoietic stem and progenitor cells (HSPCs) to derive cell colonies and then isolated cells from each for single-cell sequencing. As expected, the cells that were isolated from the same colony tended exhibit identical mitochondrial variants (i.e. they are indeed clonal).
+
+
+## Example Ludwig et al., Figure 5 **Blacklist filtering**
+
+```{r fig5blacklist,fig.width = 6, fig.height=4}
+library(mitoClone2)
+library(pheatmap)
+
+## downloaded pre-processed baseCounts type object 
+LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
+LudwigFig5.Counts <- lapply(LudwigFig5.Counts, function(x) x[,c('A','T','C','G','N')])
+
+## investigate what the ideal baseCounts object looks like
+print(head(LudwigFig5.Counts[[1]]))
+
+## calling mutations using our blacklist
+LudwigFig5 <- mutationCallsFromBlacklist(LudwigFig5.Counts, min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+
+## setting up the meta data
+LudwigFig5.meta <- data.frame(row.names = rownames(LudwigFig5@N), Clone = gsub("_.*","",gsub("Donor1_","",rownames(LudwigFig5@N))))
+
+## showing the clustering via heatmap
+clustered <- quick_cluster(LudwigFig5, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = LudwigFig5.meta,show_colnames=FALSE,fontsize_row = 7)
+
+```
+
+## Example Ludwig et al., Figure 5 **Cohort filtering**
+Now (knowing the original parental colony) we apply **cohort filtering** to reproduce Figure 5H.
+
+```{r fig5cohort,fig.width = 6, fig.height=4}
+## calling mutations using our clone information
+LudwigFig5 <- mutationCallsFromCohort(LudwigFig5.Counts, MINFRAC=0.01, MINCELL=8, MINCELLS.PATIENT=5, patient = LudwigFig5.meta$Clone,sites='chrM:1-16569')
+## check the variants for a specific cluster
+print(colnames(LudwigFig5$C112@M))
+private.mutations <- unique(unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))][unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))],function(x) !is.null(x)))],function(y) names(y@cluster))))
+private.mutations.df <- pullcountsVars(LudwigFig5.Counts, gsub("X(\\d+)([AGCT])\\.([AGCT])","\\1 \\2>\\3",private.mutations))
+private.mutations.df <- mutationCallsFromMatrix(t(private.mutations.df$M), t(private.mutations.df$N), cluster = rep(TRUE, length(private.mutations)))
+
+## showing the improved clustering via heatmap
+clustered <- quick_cluster(private.mutations.df, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2", annotation_col = LudwigFig5.meta,show_colnames=FALSE,fontsize_row = 7)
+
+```
+
+## Example Ludwig et al., Figure 7
+
+For this figure, we first reproduce the analysis by Ludwig et al., who performed unsupervised clustering using a set of variants identified by DNA sequencing.
+
+```{r fig7orig,fig.width = 6, fig.height=4}
+# this is the Fig7 A/B data it is only the single cells from the Tumor samples (see bottom arrow of Fig7A) - It looks very messay and the healthy comparison is bulk sequencing (let me know if you think I should follow up)
+LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
+
+supervised.variants <- c("9000 T>C","4819 G>A","11127 G>A","7229 A>G","5921 G>A","15735 G>A","15044 G>A","14866 G>A","6735 G>A","12651 T>C","14805 G>A")
+shifted.pos <- as.integer(gsub(" .+","",supervised.variants)) - 1
+basechange <- gsub("\\d+ ","",supervised.variants)
+supervised.variants.shifted <- paste(shifted.pos, basechange)
+hand.selected <- pullcountsVars(LudwigFig7.Counts, supervised.variants, shift=-1)
+hand.selected <- mutationCallsFromMatrix(t(hand.selected$M), t(hand.selected$N), cluster = rep(TRUE, length(supervised.variants)))
+
+clustered.hand <- quick_cluster(hand.selected, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2",fontsize_row = 7, show_colnames=FALSE, cutree_cols = 12, cluster_distance_col = "manhattan")
+ 
+orig.anno <- data.frame(row.names = names(cutree(clustered.hand$tree_col, k=12)), Clone = as.factor(cutree(clustered.hand$tree_col, k=12)))
+
+```
+
+Then, we call mitochondrial variants de novo and cluster using the `varCluster` function, as described in more detail in the [Computation of clonal hierarchies and clustering of mutations](clustering.html) vignette.
+
+Of note, in this dataset there is quite a large number of variants present in all cells at a low level of heteroplasmy which is why we modify the `universal.var.cells` parameter accordingly.
+
+```{r fig7new,fig.width = 6, fig.height=4, message=FALSE}
+LudwigFig7 <- mutationCallsFromBlacklist(LudwigFig7.Counts,min.af=0.1, min.num.samples=3, universal.var.cells = 0.25 * length(LudwigFig7.Counts), binarize = 0.1)
+LudwigFig7 <- varCluster(LudwigFig7,method='SCITE')
+
+LudwigFig7@metadata$original <- factor(NA, levels = unique(orig.anno$Clone))
+LudwigFig7@metadata[rownames(orig.anno), "original"] <- orig.anno$Clone
+ 
+LudwigFig7 <- clusterMetaclones(LudwigFig7, plot = FALSE)
+ 
+plotClones(LudwigFig7)
+ 
+```
