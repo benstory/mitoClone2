@@ -12,8 +12,8 @@ mutationCallsFromCohort(
   MINCELL = 20,
   MINFRAC = 0.1,
   MINCELLS.PATIENT = 10,
-  MINRELATIVE.PATIENT = 0.01,
-  MINRELATIVE.OTHER = 0.1,
+  MINFRAC.PATIENT = 0.01,
+  MINFRAC.OTHER = 0.1,
   USE.REFERENCE = TRUE,
   genome = "hg38"
 )
@@ -33,9 +33,9 @@ mutationCallsFromCohort(
 
 \item{MINCELLS.PATIENT}{Minimum number of mutant cells per patient to classify the mutation as relevant in that patient, AND}
 
-\item{MINRELATIVE.PATIENT}{Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient}
+\item{MINFRAC.PATIENT}{Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient}
 
-\item{MINRELATIVE.OTHER}{Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded}
+\item{MINFRAC.OTHER}{Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded. Fraction relative to the fraction of of cells from the patient where a variant is enriched.}
 
 \item{USE.REFERENCE}{Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.}
 

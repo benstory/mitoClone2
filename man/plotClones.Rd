@@ -22,6 +22,6 @@ Returns TRUE only used for generating a PostScript tree image of the putative mu
 Creates a heatmap of single cell mutation calls, clustered using PhISCS.
 }
 \examples{
-P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
+ P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 plotClones(P1)
 }

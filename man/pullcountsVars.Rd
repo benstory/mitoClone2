@@ -4,10 +4,10 @@
 \alias{pullcountsVars}
 \title{Pull variant counts}
 \usage{
-pullcountsVars(mc.out, vars, cells = NULL, shift = 0)
+pullcountsVars(BaseCounts, vars, cells = NULL)
 }
 \arguments{
-\item{mc.out}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}}
+\item{BaseCounts}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}}
 
 \item{vars}{Character vector of variants to pull, in format 5643G>T}
 
@@ -22,5 +22,5 @@ Pull variant counts
 \examples{
 LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
 known.variants <- c("9000 T>C","1234 G>A","1337 G>A")
-counts.known.vars <- pullcountsVars(LudwigFig7.Counts, known.variants)
+counts.known.vars <- pullcountsVars(LudwigFig7.Counts, vars=known.variants)
 }

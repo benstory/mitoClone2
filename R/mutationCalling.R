@@ -8,112 +8,95 @@
 #'@param MINCELL Minimum number of cells across the whole data set to cover a site
 #'@param MINFRAC Fraction of reads on the mutant allele to provisionally classify a cell as mutant
 #'@param MINCELLS.PATIENT Minimum number of mutant cells per patient to classify the mutation as relevant in that patient, AND
-#'@param MINRELATIVE.PATIENT Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient
-#'@param MINRELATIVE.OTHER Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded
+#'@param MINFRAC.PATIENT Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient
+#'@param MINFRAC.OTHER Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded. Fraction relative to the fraction of of cells from the patient where a variant is enriched.
 #'@param USE.REFERENCE Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
 #'@return A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry \code{blacklist} containing a blacklist of sites with variants in several individuals
 #'@examples BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
 #'mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites="chrM:1-15000")
 #'@export
-mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MINCELL = 20, MINFRAC = 0.1, MINCELLS.PATIENT = 10, MINRELATIVE.PATIENT = 0.01, MINRELATIVE.OTHER = 0.1, USE.REFERENCE = TRUE, genome = 'hg38') {
-  nuc.count.per.position.array <- array(data = 0,
-                                        dim = c(length(BaseCounts),
-                                                nrow(BaseCounts[[1]]),
-                                                ncol(BaseCounts[[1]])),
-                                        dimnames = list(names(BaseCounts),
-                                                        paste0("X", 1:nrow(BaseCounts[[1]])),
-                                                        colnames(BaseCounts[[1]])
-                                        ))
-
-  for (i in 1:length(BaseCounts)) nuc.count.per.position.array[i,,] <- BaseCounts[[i]]
-  if(USE.REFERENCE){
-      reference <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
-      reference <- reference[GenomicRanges::start(GRanges(sites)):GenomicRanges::end(GRanges(sites))]
-      message(paste0('Using the UCSC ',genome,' genome as a reference for variants.'))
-  }else{
-      message(paste0('The mutation names are run specific.'))
-      ##determine the overall reference
-      sum.overall <- apply(nuc.count.per.position.array, c(2,3), sum)
-      reference <- colnames(sum.overall)[apply(sum.overall, 1, which.max)]
-  }
-  
-  mt.reads.per.cell <- apply(nuc.count.per.position.array, 1, sum)
-  
-  
-  ##turn the array into a binary array of VARIANTS
-  variant_calls <- lapply(1:length(reference), function(pos) {
-      ##which variants exist at this site?
-      support <- apply(nuc.count.per.position.array[,pos,] > MINREADS,2,sum )
-      support <- support[!names(support) %in% c(reference[pos], "N")]
-      use <- names(support)[support > MINCELL]
-      
-      if (length(use) == 0){
-          NULL
-      }else {
-          out <- matrix(data =NA, ncol = length(use), nrow = nrow(nuc.count.per.position.array[,pos,]),
-                        dimnames = list(rownames(nuc.count.per.position.array[,pos,]), paste0(pos,reference[pos],">",use)))
-          for (i in 1:length(use)) {
-              pos_sum <- apply(nuc.count.per.position.array[,pos,],1,sum)
-              condition_mut <- nuc.count.per.position.array[,pos,use[i]] > MINREADS &  nuc.count.per.position.array[,pos,use[i]] > MINFRAC * pos_sum
-              condition_ref <- nuc.count.per.position.array[,pos,reference[pos]] > MINREADS &  nuc.count.per.position.array[,pos,reference[pos]] > MINFRAC * pos_sum
-              
-              out[, i] <- ifelse(condition_mut,
-                          ifelse(condition_ref, "BOTH", "MUT"),
-                          ifelse(condition_ref, "WT", "DROP")
-                          )
-          }
-          out
-      }
-      
-  })
-  
-  variant_calls <- do.call(cbind, variant_calls)  
-  ##how often does each variant exist per patient?
-  varcount.bypatient <- sapply(unique(patient), function(pa) {
-    apply(variant_calls[patient == pa, ] ,2, function(x) sum(x %in% c("BOTH","MUT")))
-  })
-  
-  
-  patient.count <-  as.vector(table(patient)[colnames(varcount.bypatient)])
-  names(patient.count) <- colnames(varcount.bypatient)
-  varcount.bypatient.fraction <- t(t(varcount.bypatient) / patient.count)
-  
-  ##throw out anything with less than
-  ##a) 10 cells and 1% support in any patient
-  filter <- apply(varcount.bypatient, 1, max) > MINCELLS.PATIENT & apply(varcount.bypatient, 1, function(x) max(x) / patient.count[which.max(x)] ) > MINRELATIVE.PATIENT
-  
-  ##b) support of more than 10 cells or 10% the level in a second patient
-  patientfilter <- filter & apply(varcount.bypatient.fraction, 1, function(x) sum(x > MINRELATIVE.OTHER*max(x)) ) == 1 & apply(varcount.bypatient, 1, function(x) sum(x >= MINCELLS.PATIENT) ) == 1
-  
-  ##what are the variants that occur in multiple patients abundantly?
-  multipatient <- filter & apply(varcount.bypatient.fraction, 1, function(x) sum(x > MINRELATIVE.OTHER*max(x)) ) > 1 & apply(varcount.bypatient, 1, function(x) sum(x >= MINCELLS.PATIENT) ) > 1 & !grepl(">-",rownames(varcount.bypatient))
-  
-  mutation.bypatient <- colnames(varcount.bypatient)[apply(varcount.bypatient[patientfilter,],1,which.max)]
-
-  variant_calls_selected <- variant_calls[,patientfilter]
-
-  #now, prepare return values.
-  mutation.bypatient <- mutation.bypatient[!grepl("->",colnames(variant_calls_selected))]
-  variant_calls_selected <- variant_calls_selected[,!grepl("->",colnames(variant_calls_selected))]
-
-  out <- lapply(unique(patient), function(pa) {
-    #a, retrieve matrices of allele counts for patient specific variants
-    if (sum(mutation.bypatient == pa) == 0) return(NULL)
-    MN <- pullcountsVars(BaseCounts[patient == pa], colnames(variant_calls_selected)[mutation.bypatient == pa])
-    #b, create mutationCalls object
-    o <- mutationCallsFromMatrix(t(MN$M), t(MN$N))
-
-  })
-
-  names(out) <- unique(patient)
-
-  #discuss this part with ben - not consistent with his blacklist.
-  out$blacklist <- rownames(varcount.bypatient[multipatient,])
-  out$blacklist <- gsub("(\\d+)(.+)","\\1 \\2", out$blacklist)
-  return(out)
+mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MINCELL = 20, MINFRAC = 0.1, MINCELLS.PATIENT = 10, MINFRAC.PATIENT = 0.01, MINFRAC.OTHER = 0.1, USE.REFERENCE = TRUE, genome = 'hg38'){
+    ## read in the 
+    ntcountsArray <- simplify2array(BaseCounts)
+    ntcountsArray <- aperm(ntcountsArray, c(1,3,2))
+    if(USE.REFERENCE){
+        reference <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
+        reference <- reference[GenomicRanges::start(GRanges(sites)):GenomicRanges::end(GRanges(sites))]
+        message(paste0('Using the UCSC ',genome,' genome as a reference for variants.'))
+    }else{
+        message(paste0('The mutation names are run specific.'))
+        totalntCounts <- apply(ntcountsArray, c(1,3), sum)
+        reference <- colnames(totalntCounts)[apply(totalntCounts, 1, which.max)]
+    }
+    ## get total reads per cell
+    total_cov_per_cell <- rowSums(colSums(ntcountsArray))
+    
+    ## make the mutation calls per var
+    variant_calls <- lapply(1:length(reference), function(pos) {
+        ## check which position have at least MINREADS total reads in each cell
+        support <- apply(ntcountsArray[pos,,] >= MINREADS,2,sum )
+        ## check which position have at least MINREADS total reads in each cell
+        ## remove reference calls and sites where unknown N calls dominate - perhapse modify later 
+        support <- support[!names(support) %in% c(reference[pos], "N", "INS","DEL","-")]
+        ## only keep variants showing up in at least MINCELL
+        candidates <- names(support)[support >= MINCELL]
+        ## return null if no variants
+        if (length(candidates) == 0){
+            NULL
+        }else {
+            total_cov_pos <- rowSums(ntcountsArray[pos,,])
+            out_matrix <- sapply(candidates,function(mutid){
+                ## mutations have at least MINREADS reads and exist as MINFRAC % of the total coverage at this nt position
+                is_mut <- ntcountsArray[pos,,mutid] >= MINREADS &  ntcountsArray[pos,,mutid] >= (MINFRAC * total_cov_pos)
+                ## reference have at least MINREADS reads and exist as MINFRAC % of the total coverage at this nt position
+                is_ref <- ntcountsArray[pos,,reference[pos]] >= MINREADS &  ntcountsArray[pos,,reference[pos]] >= (MINFRAC * total_cov_pos)
+                ## label cell depending on mutation and reference allele detection
+                ifelse(is_mut,ifelse(is_ref, "BOTH", "MUT"),ifelse(is_ref, "WT", "DROP"))
+            })
+            colnames(out_matrix) <- paste0(pos,reference[pos],">",candidates)
+            return(out_matrix)
+        }
+    })
+    ## merge the variant call matricies
+    variant_calls <- do.call(cbind, variant_calls)
+    ## count number of cell that are mutant per patient
+    varcount.bypatient <- sapply(unique(patient), function(pa) {
+        as.integer(colSums(variant_calls[patient == pa,] == "BOTH" | variant_calls[patient == pa,] == "MUT"))
+    })
+    row.names(varcount.bypatient) <- colnames(variant_calls)
+    ## total cells per patient
+    patient.totalcells <-  as.integer(table(patient)[colnames(varcount.bypatient)])
+    names(patient.totalcells) <- colnames(varcount.bypatient)
+    ## fraction of all cells containg said variant per patient
+    varcount.bypatient.fraction <- t(t(varcount.bypatient)/patient.totalcells)
+    ## find variants with at least MINCELLS.PATIENT in any patient AND at least MINFRAC.PATIENT % of all reads at a given position for that patient
+    filter <-  apply(varcount.bypatient, 1,function(ptid){
+        max(ptid) >= MINCELLS.PATIENT & max(ptid)/patient.totalcells[which.max(ptid)] >= MINFRAC.PATIENT
+    })
+    ## identify enriched variants that appear in at least MINCELLS.PATIENT and at a fraction of over MINFRAC.OTHER % of the maximum observed  frequency of this variant in only a single patient
+    ## CONSIDER CHANGING OR ADDING A SPECIFIC CUTOFF FRAC filter
+    singlepatient <- filter & apply(varcount.bypatient.fraction, 1, function(x) sum(x >= MINFRAC.OTHER*max(x)) ) == 1 & rowSums(varcount.bypatient >= MINCELLS.PATIENT) == 1
+    ## identify enriched variants that appear in at least MINCELLS.PATIENT and at a fraction of over MINFRAC.OTHER % of the maximum observed  frequency of this variant in more than one patient
+    multipatient <- filter & apply(varcount.bypatient.fraction, 1, function(x) sum(x >= MINFRAC.OTHER*max(x)) ) > 1 & rowSums(varcount.bypatient >= MINCELLS.PATIENT) > 1
+    ## extract mutations that are unique to individual patients
+    mutation.bypatient <- colnames(varcount.bypatient)[apply(varcount.bypatient[singlepatient,],1,which.max)]
+    ## pull the variant cells
+    variant_calls_selected <- variant_calls[,singlepatient]
+    ## extract the baseCounts for variants of interest
+    out <- lapply(unique(patient), function(ptid) {
+    #retrieve matrices of allele counts for patient specific variants
+        if (sum(mutation.bypatient == ptid) == 0){ return(NULL) }
+        MN <- pullcountsVars(BaseCounts[patient == ptid], colnames(variant_calls_selected)[mutation.bypatient == ptid])
+        ##create mutationCalls object
+        o <- mutationCallsFromMatrix(t(MN$M), t(MN$N))
+    })
+    names(out) <- unique(patient)
+    ## extract mutations that are shared in one or more patient for blacklist
+    out$blacklist <- rownames(varcount.bypatient[multipatient,])
+    out$blacklist <- gsub("(\\d+)(.+)","\\1 \\2", out$blacklist)
+    return(out)
 }
-
 
 #'Create a mutationCalls object from nucleotide base calls using a blacklist (single individual)
 #'
@@ -158,7 +141,7 @@ mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.nu
     }, mc.cores=10) #remove parallelism here
     varaf <- do.call(cbind, varaf)
     ## you could allow for only sites with coverage! currently you filter at a rate of 10% cells dropping out max
-    ##varaf <- varaf[rowSums(is.na(varaf))/length(mc.out) < max.fraction.na,]
+    ##varaf <- varaf[rowSums(is.na(varaf))/length(BaseCounts) < max.fraction.na,]
     varaf <- varaf[rowSums(varaf > min.af,na.rm=TRUE) >= min.num.samples,]
     
     is.names <- sapply(blacklists.use, function(x) typeof(x) == "character")
@@ -171,16 +154,17 @@ mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.nu
         removal.ranges.list <- unique(unlist(GenomicRanges::GRangesList(blacklists.use[!is.names])))
         varaf <- varaf[-c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(row.names(varaf)),removal.ranges.list))),]
     }
-                                        #if(drop.empty){
-    varaf <- varaf[rowSums(varaf,na.rm=TRUE) > 0,] #colSums(varaf,na.rm=TRUE) > 0
-                                        #}
-    
+    ##if(drop.empty){
+    ##colSums(varaf,na.rm=TRUE) > 0
+    ##}
+    ## remove empty rows
+    varaf <- varaf[rowSums(varaf,na.rm=TRUE) > 0,drop=FALSE]
+    ## remove variants that are at a certain universal af in a certain number of cells
     varaf <- varaf[!rowSums(varaf >= min.af.universal,na.rm=TRUE) >= universal.var.cells,]
     ## vars must have less than X % NA's
     varaf <- varaf[rowSums(is.na(varaf)) < max.var.na*NCOL(varaf),]
     ## cells must have less than X % NA's
-    varaf <- varaf[,colSums(is.na(varaf)) < max.cell.na*NROW(varaf)]
-    
+    varaf <- varaf[,colSums(is.na(varaf)) < max.cell.na*NROW(varaf)]    
     MN <- pullcountsVars(BaseCounts, rownames(varaf), colnames(varaf))
     mutationCallsFromMatrix(t(MN$M), t(MN$N), ...)
 }
@@ -198,47 +182,40 @@ mut2GR <- function(mut) {
   return(gr)
 }
 
-
 #'Pull variant counts
 #'
-#'@param mc.out A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}
+#'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}
 #'@param vars Character vector of variants to pull, in format 5643G>T
 #'@param cells Character vector for cells to select, or NULL if all cells from the input are to be used
 #'@return A list with two entries, M (count table on the variant allele) and N (count table on the reference allele)
 #'@examples LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
 #'known.variants <- c("9000 T>C","1234 G>A","1337 G>A")
-#'counts.known.vars <- pullcountsVars(LudwigFig7.Counts, known.variants)
+#'counts.known.vars <- pullcountsVars(LudwigFig7.Counts, vars=known.variants)
 #'@export
-pullcountsVars <- function(mc.out,vars, cells=NULL, shift=0){
-  pos <- as.integer(gsub(" *[ACGT].+","",vars)) + shift
-  ref <- gsub("\\d+ *([ACGT])>(.+)","\\1",vars)
-  alt <- gsub("\\d+ *([ACGT])>(.+)","\\2",vars)
-  N <- sapply(mc.out, function(cell) {
-    mapply(function(p,x) cell[p,x], pos, ref)
+pullcountsVars <- function(BaseCounts,vars, cells=NULL){
+  var.gr <- mut2GR(vars)
+  ## subset cells of interest if appropriate
+  if(!is.null(cells)){
+    message('Subsetting for specific cells...')
+    if(!all(cells %in% names(BaseCounts))){
+      stop(paste0('You are attempting to subset for ',sum(!(cells %in% names(BaseCounts))),'cell(s) that do not appear in your input BaseCounts!'))
+    }
+    BaseCounts <- BaseCounts[names(BaseCounts) %in% cells]
+  }
+  ## pull counts alt
+  M <- sapply(BaseCounts, function(cell) {
+    mapply(function(p,x) cell[p,x], BiocGenerics::start(var.gr), S4Vectors::mcols(t)$alt)
   })
-  M <- sapply(mc.out, function(cell) {
-    mapply(function(p,x) cell[p,x], pos, alt)
+  ## pull total counts per position
+  N <- sapply(BaseCounts, function(cell) {
+    rowSums(cell[BiocGenerics::start(var.gr),c('A','G','C','T')])
   })
   if(!is.matrix(M)) {
     M <- matrix(M, ncol = length(M),dimnames = list(vars, names(M)))
     N <- matrix(N, ncol = length(N),dimnames = list(vars,names(N)))
   }
-  rownames(M) <- vars -> rownames(N)
-  if (is.null(cells)) return(list(M = M, N = N)) else return(list(M = M[,cells], N = N[,cells]))
-  # var.gr <- mut2gr(vars)
-  # varcounts <- sapply(mc.out,function(x){
-  #   ## focus on A,G,C,T
-  #   x.ref <- sapply(seq(var.gr),function(y){
-  #     x[BiocGenerics::start(var.gr)[[y]],var.gr$ref[[y]]]
-  #   })
-  #   x.alt <- sapply(seq(var.gr),function(y){
-  #     x[BiocGenerics::start(var.gr)[[y]],var.gr$alt[[y]]]
-  #   })
-  #   return(list('ref'=x.ref,'alt'=x.alt))
-  # })
-  # var.ref <- do.call(cbind,varcounts['ref',])
-  # var.alt <- do.call(cbind,varcounts['alt',])
-  # row.names(var.alt) <- row.names(var.ref) <- vars
-  # return(list('M'=var.alt[,cells],'N'=var.ref[,cells]))
+  ## maintain consistency with previous code with N excluding the mutant allele calls
+  N <- N-M
+  rownames(M) <- row.names(N) <- vars
+  return(list(M = M, N = N))
 }
-### convert mutation to GRanges
