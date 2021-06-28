@@ -13,10 +13,10 @@ quick_cluster(mutcalls, binarize = FALSE, drop_empty = TRUE, ...)
 
 \item{drop_empty}{Remove all rows in the provided mutcalls object where no cells exhibit a mutation.}
 
-\item{...}{Parameters passed to \code{\link{pheatmap::pheatmap}}}
+\item{...}{Parameters passed to \code{\link[pheatmap]{pheatmap}}}
 }
 \value{
-The result of running \code{\link{pheatmap::pheatmap}}
+The result of running \code{\link[pheatmap]{pheatmap}}
 }
 \description{
 Performs a quick hierarchical clustering on a object of class \code{\link{mutationCalls}}. See \code{\link{varCluster}} for an alternative that infers mutational trees and uses sound models of dropout.

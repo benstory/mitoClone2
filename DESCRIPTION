@@ -7,8 +7,8 @@ Version: 0.99.0
 Authors@R: c( person(given = "Benjamin", family = "Story", role = c("aut", "cre"), email = "story.benjamin@gmail.com"),
 	   person(given = "Lars", family = "Velten", role = "aut"),
 	   person(given = "Gregor", family = "Mönke", role = "aut") )
-Description: This package primarily identifies variants in mitochondrial genomes from BAM alignment files; filters these variants to remove RNA editing events; estimates their evolutionary relationship (i.e. their phylogenetic tree); groups single cells into clones using a probabilistic approach; visualizes the mutations and provides context in relation to genomic annotations
-License: GPLv3
+Description: This package primarily identifies variants in mitochondrial genomes from BAM alignment files; filters these variants to remove RNA editing events; estimates their evolutionary relationship (i.e. their phylogenetic tree); groups single cells into clones using a probabilistic approach; visualizes the mutations and provides context in relation to genomic annotations.
+License: GPL-3
 VignetteBuilder: knitr
 Encoding: UTF-8
 LazyData: true

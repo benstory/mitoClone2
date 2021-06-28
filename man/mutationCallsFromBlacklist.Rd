@@ -15,7 +15,7 @@ mutationCallsFromBlacklist(
   max.var.na = 0.5,
   max.cell.na = 0.95,
   genome = "hg38",
-  cores = 8,
+  cores = 2,
   ...
 )
 }
@@ -40,7 +40,7 @@ mutationCallsFromBlacklist(
 
 \item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
 
-\item{cores}{number of cores to use for tabulating potential variants (defaults to 8)}
+\item{cores}{number of cores to use for tabulating potential variants (defaults to 2)}
 
 \item{...}{Parameters passed to \code{\link{mutationCallsFromMatrix}}}
 }

@@ -234,8 +234,8 @@ removeWindow <- function(x,window=1){
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
 #'@param binarize If \code{FALSE}, will use raw allele frequencies for the clustering. If \code{TRUE}, will use binarized mutation/reference/dropout calls.
 #'@param drop_empty Remove all rows in the provided mutcalls object where no cells exhibit a mutation.
-#'@param ... Parameters passed to \code{\link{pheatmap::pheatmap}}
-#'@return The result of running \code{\link{pheatmap::pheatmap}}
+#'@param ... Parameters passed to \code{\link[pheatmap]{pheatmap}}
+#'@return The result of running \code{\link[pheatmap]{pheatmap}}
 #'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
 #' quickCluster <- quick_cluster(LudwigFig7)
 #'@export

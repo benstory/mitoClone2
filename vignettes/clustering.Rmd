@@ -1,5 +1,5 @@
 ---
-title: "Computation of clonal hierarchies and clustering of mutations"
+title: "Computation of phylogenetic trees and clustering of mutations"
 author: "Lars Velten"
 output: rmarkdown::html_vignette
 vignette: >

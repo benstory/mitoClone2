@@ -114,13 +114,13 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
 #'@param max.var.na Final filtering step: Remove all mutations with no coverage in more than this fraction of cells
 #'@param max.cell.na Final filtering step: Remove all cells with no coverage in more than this fraction of mutations
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@param cores number of cores to use for tabulating potential variants (defaults to 8)
+#'@param cores number of cores to use for tabulating potential variants (defaults to 2)
 #'@param ... Parameters passed to \code{\link{mutationCallsFromMatrix}}
 #'@return An object of class \code{\link{mutationCalls}}
 #'@examples LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
 #'LudwigFig5 <- mutationCallsFromBlacklist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
 #'@export
-mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), blacklists.use = blacklists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',cores=8,...) {
+mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), blacklists.use = blacklists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',cores=2,...) {
     mito.dna <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
     varaf <- parallel::mclapply(BaseCounts,function(x){
         ## focus on A,G,C,T
@@ -209,11 +209,11 @@ pullcountsVars <- function(BaseCounts,vars, cells=NULL){
   }
   ## pull counts alt
   M <- sapply(BaseCounts, function(cell) {
-    mapply(function(p,x) cell[p,x], BiocGenerics::start(var.gr), S4Vectors::mcols(var.gr)$alt)
+    mapply(function(p,x) cell[p,x], GenomicRanges::start(var.gr), S4Vectors::mcols(var.gr)$alt)
   })
   ## pull total counts per position
   N <- sapply(BaseCounts, function(cell) {
-    rowSums(cell[BiocGenerics::start(var.gr),c('A','G','C','T'),drop=FALSE])
+    rowSums(cell[GenomicRanges::start(var.gr),c('A','G','C','T'),drop=FALSE])
   })
   if(!is.matrix(M) | !is.matrix(N)) {
     M <- matrix(M, ncol = length(M),dimnames = list(vars, names(M)))

@@ -1,9 +1,9 @@
 ---
-title: "Variant calling"
+title: "Variant Calling"
 author: "Benjamin Story"
 output: rmarkdown::html_document
 vignette: >
-  %\VignetteIndexEntry{Variant calling}
+  %\VignetteIndexEntry{Variant Calling}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---

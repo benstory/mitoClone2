@@ -16,7 +16,7 @@ bam2R_10x(
   mask = 0,
   keepflag = 0,
   max.mismatches = NULL,
-  ncores = 8,
+  ncores = 2,
   ignore_nonstandard = FALSE
 )
 }
@@ -43,7 +43,7 @@ bam2R_10x(
 
 \item{max.mismatches}{Integer indicating maximum MN value to allow in a read. Default NULL (no filter).}
 
-\item{ncores}{Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 8.}
+\item{ncores}{Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 2.}
 
 \item{ignore_nonstandard}{Boolean indicating whether or not gapped alignments, insertions, or deletions should be included in the final output. Default FALSE. If you have an inflation of spliced mitochondrial reads it is recommended to set this to TRUE.}
 }

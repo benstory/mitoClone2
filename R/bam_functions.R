@@ -3,15 +3,15 @@
 #'Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell.
 #'@param bamfiles A character vector specifying the bam file paths
 #'@param sites String specifying genomic regions, defaults to the entire mitochondrial genome.
-#'@param ncores Number of threads to use for the computation. Default 8
+#'@param ncores Number of threads to use for the computation. Default 2
 #'@param ignore_nonstandard Ignore basecalls that are not AGCTN
 #'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromBlacklist}} or \code{\link{mutationCallsFromCohort}}
 #'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
 #'@export
-baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=8, ignore_nonstandard=FALSE) {
+baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=2, ignore_nonstandard=FALSE) {
     mito.chr <- GenomicRanges::GRanges(sites)
     mc.out <- parallel::mclapply(bamfiles, function(bampath){
-        bam.file <- deepSNV::bam2R(bampath, chr = GenomicRagnes::seqnames(mito.chr),start = GenomicRanges::start(mito.chr), stop = GenomicRanges::end(mito.chr))
+        bam.file <- deepSNV::bam2R(bampath, chr = GenomicRanges::seqnames(mito.chr),start = GenomicRanges::start(mito.chr), stop = GenomicRanges::end(mito.chr))
         bam.file.sub <- bam.file[,12:19]
         bam.file <- bam.file[,1:8]
         bam.file <- bam.file + bam.file.sub
@@ -41,7 +41,7 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=8, ig
 #' @param mask Integer indicating which flags to filter. Default 0 (no mask). Try 1796 (BAM_DEF_MASK).
 #' @param keepflag Integer indicating which flags to keep. Default 0 (no mask). Try 3  (PAIRED|PROPERLY_PAIRED).
 #' @param max.mismatches Integer indicating maximum MN value to allow in a read. Default NULL (no filter).
-#' @param ncores Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 8.
+#' @param ncores Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 2.
 #' @param ignore_nonstandard Boolean indicating whether or not gapped alignments, insertions, or deletions should be included in the final output. Default FALSE. If you have an inflation of spliced mitochondrial reads it is recommended to set this to TRUE.
 #' @return A named \code{\link{list}} of \code{\link{matrix}} with rows corresponding to genomic positions and columns for the nucleotide counts (A, T, C, G, -), masked nucleotides (N), (INS)ertions, (DEL)etions that count how often a read begins and ends at the given position, respectively. Each member of the list corresponds to an invididual cells or entity based on the cell barcode of interest. The names of the elements of the list correspond to the respective cell barcodes.
 #' For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountsFromBamList}} function.
@@ -51,7 +51,7 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=8, ig
 #' @author Benjamin Story (adapted from original code with permission from Moritz Gerstung)
 #' @export bam2R_10x
 #' 
-bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, max.depth=1000000, verbose=FALSE, mask=0, keepflag=0, max.mismatches=NULL,ncores=8,ignore_nonstandard=FALSE){
+bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, max.depth=1000000, verbose=FALSE, mask=0, keepflag=0, max.mismatches=NULL,ncores=2,ignore_nonstandard=FALSE){
     mito.chr <- GenomicRanges::GRanges(sites)
     chr = GenomicRanges::seqnames(mito.chr)
     start = GenomicRanges::start(mito.chr)
@@ -74,7 +74,7 @@ bam2R_10x <- function(file, sites="MT:1-16569", q=25, mq=0, s=2, head.clip = 0, 
                    as.integer(keepflag),
                    as.integer(max.mismatches))
     barcode.n <- names(result)
-    result <- mclapply(result,function(mat){
+    result <- parallel::mclapply(result,function(mat){
         bam.file <- matrix(mat, nrow=stop-start+1,dimnames = list(NULL,c('A','T','C','G','-','N','INS','DEL','HEAD','TAIL','QUAL','a','t','c','g','_','n','ins','del','head','tail','qual')))
         bam.file.sub <- bam.file[,12:19]
         bam.file <- bam.file[,1:8]

@@ -1,6 +1,6 @@
-# mitoClone2 R Package
+# mitoClone2 <img src='man/figures/logo.png' align="right" height="139" />
 
-The tool is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing. It is a new and improved version of the package, mitoClone, originally described by [Velten et al. (2021)](https://www.nature.com/articles/s41467-021-21650-1).
+The R package is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing. It is a new and improved version of the package, mitoClone, originally described by [Velten et al. (2021)](https://www.nature.com/articles/s41467-021-21650-1).
 
 ## 1. System Requirements:
    - Linux/Mac
@@ -47,6 +47,6 @@ Please make sure to set your environmental python variables correctly for use of
 Again please view the R vignettes for usage possibilities.
 
    - **overview**: Instructions on how to filter mitochondrial mutations using either a blacklist or shared mutations across samples/patients (typical runtime: > 10 minutes)
-   - **clustering**: Instructions on how to cluster mutations into a clonal hierarchy and how to assign cells to clones (typical runtime: > 2 hours)
+   - **clustering**: Instructions on how to cluster mutations into a clonal hierarchy and how to assign cells to clones (typical runtime: < 1 hour)
 
 
