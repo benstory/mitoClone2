@@ -25,7 +25,10 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
         message('No method selected, defaulting to PhISCS-I')
         method <- 'PhISCS'
     }
-    ##dir.create(file.path(tempfolder,'out'))
+    if (!file.exists(file.path(tempfolder, "out"))) {
+        message(paste0('Creating temporary dir: ',file.path(tempfolder,'out'),' for PhISCS run.'))
+        dir.create(file.path(tempfolder,'out'))
+    }
     if(method == 'PhISCS'){
         write.table(usedata, file = file.path(tempfolder,"in.txt"), quote = FALSE, sep="\t",
                     row.names = gsub("[><_]","",rownames(usedata)),col.names = gsub("[><_]","",colnames(usedata)))
@@ -230,6 +233,7 @@ removeWindow <- function(x,window=1){
 #'Performs a quick hierarchical clustering on a object of class \code{\link{mutationCalls}}. See \code{\link{varCluster}} for an alternative that infers mutational trees and uses sound models of dropout.
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
 #'@param binarize If \code{FALSE}, will use raw allele frequencies for the clustering. If \code{TRUE}, will use binarized mutation/reference/dropout calls.
+#'@param drop_empty Remove all rows in the provided mutcalls object where no cells exhibit a mutation.
 #'@param ... Parameters passed to \code{\link{pheatmap::pheatmap}}
 #'@return The result of running \code{\link{pheatmap::pheatmap}}
 #'@examples load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))

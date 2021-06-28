@@ -1,7 +1,7 @@
 #'mutationCalls class
 #'
-#'To create this class from a list of bam files (where each bam file corresponds to a single cell), use \code{\link{mutationCallsFromBamList}}
-#'To create this class if you already have the matrices of mutation counts, use its contstructor, i.e. \code{mutationCallsFromMatrix(M = data1, N = data2)}
+#'To create this class from a list of bam files (where each bam file corresponds to a single cell), use \code{\link{mutationCallsFromCohort}} or \code{\link{mutationCallsFromBlacklist}}.
+#'To create this class if you already have the matrices of mutation counts, use its contstructor, i.e. \code{mutationCallsFromMatrix(M = data1, N = data2)}.
 #'
 #'@slot M A matrix of read counts mapping to the \emph{mutant} allele. Columns are genomic sites and rows and single cells.
 #'@slot N A matrix of read counts mapping to the \emph{nonmutant} alleles. Columns are genomic sites and rows and single cells.
@@ -43,6 +43,7 @@ mutationCalls <- setClass(
 #'@param M A matrix of read counts mapping to the \emph{mutant} allele. Columns are genomic sites and rows and single cells.
 #'@param N A matrix of read counts mapping to the \emph{referece} allele. Columns are genomic sites and rows and single cells.
 #'@param cluster If \code{NULL}, only mutations with coverage in 20 percent of the cells or more will be used for the clustering, and all other mutations will be used for cluster annotation only. Alternatively, a boolean vector of length \code{ncol(M)} that specifies the desired behavior for each genomic site.
+#'@param metadata A data.frame of metadata that will be transfered to the final output where the \code{row.names(metadata)} correspond to the the \code{row.names(M)}.
 #'@param binarize Allele frequency threshold to define a site as mutant (required for some clustering methods)
 #'@return An object of class \code{\link{mutationCalls}}.
 #'@examples LudwigFig7.Counts <- readRDS(url('http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS'))
@@ -54,7 +55,7 @@ mutationCallsFromMatrix <- function(M, N, cluster=NULL, metadata = data.frame(ro
   colnames(M) <- make.names(colnames(M))
   colnames(N) <- make.names(colnames(N))
   binfun <- function(M,N) {alleleRatio <- M/(M+N); apply(alleleRatio, 2, function(x) ifelse(is.na(x),"?", ifelse(x>binarize,"1","0")))}
-  out <- new("mutationCalls", M=M, N=N, metadata = metadata, ternary=binfun(M,N))
+  out <- methods::new("mutationCalls", M=M, N=N, metadata = metadata, ternary=binfun(M,N))
 
   if (!is.null(cluster)) out@cluster <- cluster else {
     out@cluster <- apply(out@ternary!="?", 2, mean) > 0.2 #& apply(out@ternary=="1", 2, mean) > 0.04 #the last filter was not used when I made the figure, there was a filter on the allele freq. in RNA. Should maybe include this in the other routines? But this works as well
@@ -68,7 +69,7 @@ mutationCallsFromMatrix <- function(M, N, cluster=NULL, metadata = data.frame(ro
 #'@param mutcalls object of class \code{\link{mutationCalls}}.
 #'@param what One of the following: \emph{alleleRatio}: The fraction of reads mapping to the mutant allele or \emph{ternary}: Ternarized mutation status
 #'@param show boolean vector specifying for each mutation if it should be plotted on top of the heatmap as metadata; defaults to mutations not used for the clustering \code{!mutcalls@cluster}
-#'@param ... any arguments passed to \code{\link{pheatmap::pheatmap}}
+#'@param ... any arguments passed to \code{\link[pheatmap]{pheatmap}}
 #'@examples  P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 #' plotClones(P1)
 #'@return Returns TRUE only used for generating a PostScript tree image of the putative mutation tree

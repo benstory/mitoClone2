@@ -19,6 +19,8 @@ mutationCallsFromMatrix(
 
 \item{cluster}{If \code{NULL}, only mutations with coverage in 20 percent of the cells or more will be used for the clustering, and all other mutations will be used for cluster annotation only. Alternatively, a boolean vector of length \code{ncol(M)} that specifies the desired behavior for each genomic site.}
 
+\item{metadata}{A data.frame of metadata that will be transfered to the final output where the \code{row.names(metadata)} correspond to the the \code{row.names(M)}.}
+
 \item{binarize}{Allele frequency threshold to define a site as mutant (required for some clustering methods)}
 }
 \value{

@@ -13,7 +13,7 @@ plotClones(mutcalls, what = "alleleRatio", show = c(), ...)
 
 \item{show}{boolean vector specifying for each mutation if it should be plotted on top of the heatmap as metadata; defaults to mutations not used for the clustering \code{!mutcalls@cluster}}
 
-\item{...}{any arguments passed to \code{\link{pheatmap::pheatmap}}}
+\item{...}{any arguments passed to \code{\link[pheatmap]{pheatmap}}}
 }
 \value{
 Returns TRUE only used for generating a PostScript tree image of the putative mutation tree

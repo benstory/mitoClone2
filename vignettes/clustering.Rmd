@@ -40,15 +40,19 @@ The next step is to run [SCITE](https://github.com/cbg-ethz/SCITE) or [PhISCS](h
 
 ```{r runTreebuilding, message=FALSE}
 ## this next step takes approx 4.1 minutes to run
-P1 <- varCluster(P1, tempfolder='/tmp/p1', method='SCITE')
+## Given a lack of dynamic tempfolder creation, this step has been commented out. However, if you have an appropriate tempdir set this command can be run manually.
+tmpd <- tempdir()
+dir.create(paste0(tmpd,'/p1'))
+dir.create(paste0(tmpd,'/p2'))
+P1 <- varCluster(P1, tempfolder=paste0(tmpd,'/p1'),method='SCITE')
 ## this next step takes approx 2.3 minutes to run
-P2 <- varCluster(P2, tempfolder='/tmp/p2', method='SCITE')
+P2 <- varCluster(P2, tempfolder=paste0(tmpd,'/p2'),method='SCITE')
 ```
 
 This step can take a while to run. It computes a likely phylogenetic tree of all the mutations. In the case of SCITE, multiple equally likely tree can be produced. In it's current state, this package simply selects the first one from the list. Furthermore, SCITE may associate cells with different potential If you have graphviz (`dot`) installed, you can create postscript files displaying these plots:
 
 ```{r plotTree}
-mitoClone2:::plotTree(P1, file = "P1.ps")
+mitoClone2:::plotTree(P1,file = "P1.ps")
 mitoClone2:::plotTree(P2,file = "P2.ps")
 ```
 
@@ -84,7 +88,6 @@ plotClones(P2)
 The parameter `min.lik` that controls the merging is set arbitrarily. In practice, the goal of these analyses is to group mutations into clones for subsequent analyses (such as differential expression analyses) and it may make sense to overwrite the result of `clusterMetaclones` manually; for example, if a subclone defned on a mitochondrial mutation only should be treated as part of a more clearly defined upstream clone for differential expression analysis.
 
 To overwrite the result of `clusterMetaclones`, first retrieve the assignment of mutations to clones:
-
 ```{r getmut2clone, fig.width=8,fig.height=6}
 m2c <- mitoClone2:::getMut2Clone(P1)
 print(m2c)

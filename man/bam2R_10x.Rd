@@ -49,7 +49,7 @@ bam2R_10x(
 }
 \value{
 A named \code{\link{list}} of \code{\link{matrix}} with rows corresponding to genomic positions and columns for the nucleotide counts (A, T, C, G, -), masked nucleotides (N), (INS)ertions, (DEL)etions that count how often a read begins and ends at the given position, respectively. Each member of the list corresponds to an invididual cells or entity based on the cell barcode of interest. The names of the elements of the list correspond to the respective cell barcodes.
-For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountFromBamList}} function.
+For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountsFromBamList}} function.
 The returned list has a variable length depending on the ignore_nonstandard parameter and each element contains a  matrix has 8 columns and (stop - start + 1) rows. The two strands have their counts merged. If no counts are present in the provided sites parameter nothing will be returned.
 IMPORTANT: The names of the list will NOT reflect the source filename and will exclusively be named based on the respective the barcodes extracted from said file. If merging multiple datasets, it is important to change the list's names  once imported to avoid naming collisions.
 }

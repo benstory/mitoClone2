@@ -150,7 +150,7 @@ Now (knowing the original parental colony) we apply **cohort filtering** to repr
 
 ```{r fig5cohort,fig.width = 6, fig.height=4}
 ## calling mutations using our clone information
-LudwigFig5 <- mutationCallsFromCohort(LudwigFig5.Counts, MINFRAC=0.01, MINCELL=8, MINCELLS.PATIENT=5, patient = LudwigFig5.meta$Clone,sites='chrM:1-16569')
+LudwigFig5 <- mutationCallsFromCohort(LudwigFig5.Counts, MINFRAC=0.01, MINCELL=8, MINCELLS.PATIENT=5, patient = LudwigFig5.meta$Clone, sites='chrM:1-16569')
 ## check the variants for a specific cluster
 print(colnames(LudwigFig5$C112@M))
 private.mutations <- unique(unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))][unlist(lapply(LudwigFig5[grep('^C',names(LudwigFig5))],function(x) !is.null(x)))],function(y) names(y@cluster))))
@@ -167,19 +167,16 @@ clustered <- quick_cluster(private.mutations.df, binarize = TRUE, drop_empty = T
 For this figure, we first reproduce the analysis by Ludwig et al., who performed unsupervised clustering using a set of variants identified by DNA sequencing.
 
 ```{r fig7orig,fig.width = 6, fig.height=4}
-# this is the Fig7 A/B data it is only the single cells from the Tumor samples (see bottom arrow of Fig7A) - It looks very messay and the healthy comparison is bulk sequencing (let me know if you think I should follow up)
+# This is the Fig7 A/B data it is only the single cells from the tumor samples (see bottom arrow of Fig7A) - It looks very messy and the healthy comparison is bulk sequencing. We aligned to the hg38 genome resulting in a one nucleotide offset for most variants.
 LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
 
-supervised.variants <- c("9000 T>C","4819 G>A","11127 G>A","7229 A>G","5921 G>A","15735 G>A","15044 G>A","14866 G>A","6735 G>A","12651 T>C","14805 G>A")
-shifted.pos <- as.integer(gsub(" .+","",supervised.variants)) - 1
-basechange <- gsub("\\d+ ","",supervised.variants)
-supervised.variants.shifted <- paste(shifted.pos, basechange)
-hand.selected <- pullcountsVars(LudwigFig7.Counts, supervised.variants, shift=-1)
+supervised.variants <- c("8999 T>C","4818 G>A","11126 G>A","7228 A>G","5920 G>A","15734 G>A","15043 G>A","14865 G>A","6734 G>A","12650 T>C","14804 G>A")
+hand.selected <- pullcountsVars(LudwigFig7.Counts, supervised.variants)
 hand.selected <- mutationCallsFromMatrix(t(hand.selected$M), t(hand.selected$N), cluster = rep(TRUE, length(supervised.variants)))
 
 clustered.hand <- quick_cluster(hand.selected, binarize = TRUE, drop_empty = TRUE, clustering.method = "ward.D2",fontsize_row = 7, show_colnames=FALSE, cutree_cols = 12, cluster_distance_col = "manhattan")
  
-orig.anno <- data.frame(row.names = names(cutree(clustered.hand$tree_col, k=12)), Clone = as.factor(cutree(clustered.hand$tree_col, k=12)))
+originalAnn <- data.frame(row.names = names(cutree(clustered.hand$tree_col, k=12)), Clone = as.factor(cutree(clustered.hand$tree_col, k=12)))
 
 ```
 
@@ -191,8 +188,8 @@ Of note, in this dataset there is quite a large number of variants present in al
 LudwigFig7 <- mutationCallsFromBlacklist(LudwigFig7.Counts,min.af=0.1, min.num.samples=3, universal.var.cells = 0.25 * length(LudwigFig7.Counts), binarize = 0.1)
 LudwigFig7 <- varCluster(LudwigFig7,method='SCITE')
 
-LudwigFig7@metadata$original <- factor(NA, levels = unique(orig.anno$Clone))
-LudwigFig7@metadata[rownames(orig.anno), "original"] <- orig.anno$Clone
+LudwigFig7@metadata$original <- factor(NA, levels = unique(originalAnn$Clone))
+LudwigFig7@metadata[rownames(originalAnn), "original"] <- originalAnn$Clone
  
 LudwigFig7 <- clusterMetaclones(LudwigFig7, plot = FALSE)
  

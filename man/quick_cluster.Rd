@@ -11,6 +11,8 @@ quick_cluster(mutcalls, binarize = FALSE, drop_empty = TRUE, ...)
 
 \item{binarize}{If \code{FALSE}, will use raw allele frequencies for the clustering. If \code{TRUE}, will use binarized mutation/reference/dropout calls.}
 
+\item{drop_empty}{Remove all rows in the provided mutcalls object where no cells exhibit a mutation.}
+
 \item{...}{Parameters passed to \code{\link{pheatmap::pheatmap}}}
 }
 \value{

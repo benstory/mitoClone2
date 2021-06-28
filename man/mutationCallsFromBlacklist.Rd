@@ -15,6 +15,7 @@ mutationCallsFromBlacklist(
   max.var.na = 0.5,
   max.cell.na = 0.95,
   genome = "hg38",
+  cores = 8,
   ...
 )
 }
@@ -31,15 +32,17 @@ mutationCallsFromBlacklist(
 
 \item{universal.var.cells}{Maximum number of cells required to be classified as mutant according to the threshold set in \code{min.af.universal}.  Usually specified as a fraction of the total number of cells; serves to avoid e.g. germline variants.}
 
+\item{blacklists.use}{Blacklists to use. The default blacklists object is included with this package and includes sites to exclude in GRanges format. The three blacklists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations) . These list can also be generated manually by a researcher.}
+
 \item{max.var.na}{Final filtering step: Remove all mutations with no coverage in more than this fraction of cells}
 
 \item{max.cell.na}{Final filtering step: Remove all cells with no coverage in more than this fraction of mutations}
 
 \item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
 
-\item{...}{Parameters passed to \code{\link{mutationCallsFromMatrix}}}
+\item{cores}{number of cores to use for tabulating potential variants (defaults to 8)}
 
-\item{blacklists}{Blacklists to use. The default blacklists object is included with this package and includes sites to exclude in GRanges format. The three blacklists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations) . These list can also be generated manually by a researcher.}
+\item{...}{Parameters passed to \code{\link{mutationCallsFromMatrix}}}
 }
 \value{
 An object of class \code{\link{mutationCalls}}

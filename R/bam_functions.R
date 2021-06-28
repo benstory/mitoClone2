@@ -1,6 +1,6 @@
 #'Create a list object from a list of single-cell BAM files where each contains a matrix of the of AGCT nt counts at chosen sites
 #'
-#'Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell and passes the result to the \code{\link{mutationCallsFromDeepSNV}} function for filtering variants.
+#'Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell.
 #'@param bamfiles A character vector specifying the bam file paths
 #'@param sites String specifying genomic regions, defaults to the entire mitochondrial genome.
 #'@param ncores Number of threads to use for the computation. Default 8
@@ -9,9 +9,9 @@
 #'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
 #'@export
 baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=8, ignore_nonstandard=FALSE) {
-    mito.chr <- GRanges(sites)
-    mc.out <- parallel:::mclapply(bamfiles, function(bampath){
-        bam.file <- deepSNV:::bam2R(bampath, chr = GenomeInfoDb:::seqnames(mito.chr),start = BiocGenerics:::start(mito.chr), stop = BiocGenerics:::end(mito.chr))
+    mito.chr <- GenomicRanges::GRanges(sites)
+    mc.out <- parallel::mclapply(bamfiles, function(bampath){
+        bam.file <- deepSNV::bam2R(bampath, chr = GenomicRagnes::seqnames(mito.chr),start = GenomicRanges::start(mito.chr), stop = GenomicRanges::end(mito.chr))
         bam.file.sub <- bam.file[,12:19]
         bam.file <- bam.file[,1:8]
         bam.file <- bam.file + bam.file.sub
@@ -44,7 +44,7 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=8, ig
 #' @param ncores Integer indicating the number of threads to use for the parallel function call that summarize the results for each bam file. Default 8.
 #' @param ignore_nonstandard Boolean indicating whether or not gapped alignments, insertions, or deletions should be included in the final output. Default FALSE. If you have an inflation of spliced mitochondrial reads it is recommended to set this to TRUE.
 #' @return A named \code{\link{list}} of \code{\link{matrix}} with rows corresponding to genomic positions and columns for the nucleotide counts (A, T, C, G, -), masked nucleotides (N), (INS)ertions, (DEL)etions that count how often a read begins and ends at the given position, respectively. Each member of the list corresponds to an invididual cells or entity based on the cell barcode of interest. The names of the elements of the list correspond to the respective cell barcodes.
-#' For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountFromBamList}} function.
+#' For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountsFromBamList}} function.
 #' The returned list has a variable length depending on the ignore_nonstandard parameter and each element contains a  matrix has 8 columns and (stop - start + 1) rows. The two strands have their counts merged. If no counts are present in the provided sites parameter nothing will be returned.
 #' IMPORTANT: The names of the list will NOT reflect the source filename and will exclusively be named based on the respective the barcodes extracted from said file. If merging multiple datasets, it is important to change the list's names  once imported to avoid naming collisions.
 #' @examples bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")

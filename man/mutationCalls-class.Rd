@@ -6,8 +6,8 @@
 \alias{mutationCalls}
 \title{mutationCalls class}
 \description{
-To create this class from a list of bam files (where each bam file corresponds to a single cell), use \code{\link{mutationCallsFromBamList}}
-To create this class if you already have the matrices of mutation counts, use its contstructor, i.e. \code{mutationCallsFromMatrix(M = data1, N = data2)}
+To create this class from a list of bam files (where each bam file corresponds to a single cell), use \code{\link{mutationCallsFromCohort}} or \code{\link{mutationCallsFromBlacklist}}.
+To create this class if you already have the matrices of mutation counts, use its contstructor, i.e. \code{mutationCallsFromMatrix(M = data1, N = data2)}.
 }
 \section{Slots}{
 
