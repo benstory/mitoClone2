@@ -218,8 +218,9 @@ removeWindow <- function(x,window=1){
     if(any(sapply(x,grepl,'^[A-Z]'))){ stop('Non-standard variant name detected. Please only provide variant coordinates in the following format: 1337 G>A')}
     firstround <- sort(mut2GR(x))
     removeidentical <- unique(firstround[which(GenomicRanges::countOverlaps(firstround) > 1)])
-    bigreg<- GenomicRanges::reduce(firstround)
-    bigreg <- bigreg[GenomicRanges::width(bigreg) > window]
+    bigreg <- GenomicRanges::reduce(firstround)
+    bigreg.w <- as.numeric(GenomicRanges::width(bigreg))
+    bigreg <- bigreg[bigreg.w > window]
     bigreg <- GenomicRanges::reduce(c(bigreg,removeidentical))
     if(length(c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))) > 0){
         x <- x[-c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))]
