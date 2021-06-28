@@ -215,16 +215,16 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
 #' P1@cluster <- P1@cluster[names(P1@cluster) %in% P1.muts]
 #'@export
 removeWindow <- function(x,window=1){
-    if(grepl('^[A-Z]',x)){ stop('Non-standard variant name detected. Please only provide variant coordinates in the following format: 1337 G>A')}
+    if(any(sapply(x,grepl,'^[A-Z]'))){ stop('Non-standard variant name detected. Please only provide variant coordinates in the following format: 1337 G>A')}
     firstround <- sort(mut2GR(x))
     removeidentical <- unique(firstround[which(GenomicRanges::countOverlaps(firstround) > 1)])
     bigreg<- GenomicRanges::reduce(firstround)
-    bigreg <- bigreg[width(bigreg) > window]
+    bigreg <- bigreg[GenomicRanges::width(bigreg) > window]
     bigreg <- GenomicRanges::reduce(c(bigreg,removeidentical))
-  if(length(c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))) > 0){
-    x <- x[-c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))]
-  }
-  return(x)
+    if(length(c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))) > 0){
+        x <- x[-c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(x),bigreg)))]
+    }
+    return(x)
 }
 
 
@@ -288,6 +288,66 @@ clusterMetaclones <- function(mutcalls, min.lik = 1, plot = TRUE) {
 
   return(mutcalls)
 }
+
+
+#'Plot clone-specific variants in circular plots
+#'
+#'@param variants Character vector of variants to plot in format 5643G>T or 5643 G>T.
+#'@param patient Characet vector identifying which variant belongs to what clone. The order should match that of the 'vars' parameter and shoul dbe of identical length. If none is provided, the function assumes all variants are from one single sample which will be named "Main Clone". Default: NULL.
+#'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
+#'@param showLegend Boolean for whether or not the gene legend should be present in the final output plot. Default: TRUE.
+#'@param showLabel Boolean for whether or not the name of the variant should be shown as a label in the final output plot. Default: TRUE.
+#'@return A ggplot object illustrating the clone specific mutations.
+#'@examples known.variants <- c("9001 T>C","12345 G>A","1337 G>A")
+#'mitoPlot(known.variants)
+#'@export
+mitoPlot <- function(variants,patient=NULL,genome='hg38',showLegend=TRUE,showLabel=TRUE){
+  mito.var <- mut2GR(variants)
+  mito.gr <- switch(genome, "hg38" = hg38.mito, "hg19" = hg19.mito, "mm10" = mm10.mito)
+  mito.gr <- mito.gr[mito.gr$gene_biotype != 'Mt_tRNA']
+  S4Vectors::mcols(mito.gr) <- S4Vectors::mcols(mito.gr)[,c('external_gene_name'),drop=FALSE]
+  mito.genes.df <- data.frame(c(GenomicRanges::resize(mito.gr,width=1,fix='start'),c(GenomicRanges::resize(mito.gr,width=1,fix='end'))))
+  mito.genes.df$gene <- gsub("mt-|MT-","",mito.genes.df$external_gene_name)
+  mito.genes.df$gene <- factor(mito.genes.df$gene,levels=rev(sort(unique(mito.genes.df$gene))))
+  mito.genes.df$external_gene_name <- NULL
+  mito.genes.df$type <- 'mito'
+  mito.gene.color <- c(grDevices::colorRampPalette(c("springgreen4", "chartreuse4", "chartreuse","darkolivegreen2","darkolivegreen"))(length(unique(subset(mito.genes.df,type=='mito')$gene))),rev(c("#F9B90AFF","#E6352FFF","#3D79F3FF")))
+  mito.genes.df$sample <- 'Main Clone'
+  ## setup the color scheme
+  var.df <- data.frame(mito.var)
+  var.df$ref <-  var.df$alt <- NULL
+  var.df$gene <- variants
+  var.df$type <- 'mutation'
+  if(!is.null(patient)){
+    var.df$sample <- patient
+    patcol <- grDevices::rainbow(length(unique(patient)))
+    names(patcol) <- unique(patient)
+    plot.df.list <- lapply(unique(patient),function(z){
+      plot.df.sub <- rbind(mito.genes.df,subset(var.df[,colnames(mito.genes.df)],sample == z,drop = FALSE))
+      plot.df.sub$sample <- z
+      plot.df.sub$strand <- patcol[z]
+      return(plot.df.sub)
+    })
+    plot.df <- do.call(rbind,plot.df.list)
+  }else{
+      var.df$sample <- 'Main Clone'
+      var.df$strand <- 'red'
+      plot.df <- rbind(mito.genes.df,var.df[,colnames(mito.genes.df)])
+  }
+  ## prepare to plot
+  if(showLegend){
+    p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) + ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) + ggplot2::geom_line(size=4)+ ggplot2::theme_void(base_size=24) + ggplot2::xlab('') + ggplot2::ylab('') + ggplot2::theme(legend.position = "top", axis.text.x = ggplot2::element_blank()) + ggplot2::scale_color_manual(values=mito.gene.color) + ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand)  + ggplot2::coord_polar() + ggplot2::facet_wrap(~sample) + ggplot2::ylim(0,13)
+  }else{
+    p <- ggplot2::ggplot(data=subset(plot.df,type=='mito'), ggplot2::aes(x = start, y=12, color=gene)) + ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) + ggplot2::geom_line(size=4)+ ggplot2::theme_void(base_size=24) + ggplot2::xlab('') + ggplot2::ylab('') + ggplot2::theme(legend.position = "none",axis.text.x = ggplot2::element_blank()) + ggplot2::scale_color_manual(values=mito.gene.color) + ggplot2::geom_point(data=subset(plot.df,type == 'mutation'),size=5, ggplot2::aes(x = start, y = 12), color=subset(plot.df,type == 'mutation')$strand) + ggplot2::coord_polar() + ggplot2::facet_wrap(~sample) + ggplot2::ylim(0,13)
+  }
+  if(showLabel){
+    p <- p + ggplot2::geom_text(data=subset(plot.df,type == 'mutation'),ggplot2::aes(x = start, y = 12, label = gene),color='black',nudge_y = -3)
+    p
+  }else{
+    p
+  }
+}
+
 
 #'Manually overwrite clustering of mutations into clones
 #'

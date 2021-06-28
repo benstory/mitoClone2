@@ -15,7 +15,7 @@ LazyData: true
 biocViews: Annotation, DataImport, Genetics, SNP, Software, SingleCell,
         Alignment
 Imports: reshape2, GenomicRanges, pheatmap, deepSNV, grDevices,
-        graphics, stats, utils, S4Vectors, Rhtslib, parallel, methods
+        graphics, stats, utils, S4Vectors, Rhtslib, parallel, methods, ggplot2
 Suggests: knitr, rmarkdown, Biostrings
 RoxygenNote: 7.1.0
 SystemRequirements: GNU make, SCITE (optional), PhISCS (optional)
