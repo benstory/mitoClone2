@@ -1,3 +1,7 @@
+\section{Version 0.99.1}{\itemize{
+\item
+Added compatibility with multiple compilers and included SCITE's source directly
+}}
 \section{Version 0.99.0}{\itemize{
 \item
 New package mitoClone2, for analysis of mitochondrial variants from single-cell sequencing data

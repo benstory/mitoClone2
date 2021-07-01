@@ -1,8 +1,14 @@
-/**********************************************************************
+/**************************************************************************************
  * bam2R10x.cpp An interface for R to count nucleotides in a multiplexed.bam file
  * or .cram alignment
- * The majoriy of the code was originally written for the deepSNV by drjsanger@github
- * Copywrite 2021 story.benjamin@gmail.com
+ * The majoriy of the code was originally written for the deepSNV by Moritz Gerstung
+ * Copyright 2021 story.benjamin@gmail.com
+ /**************************************************************************************
+#ORIGINAL LICENSE:
+/**********************************************************************
+ * bamcram2R.cpp An interface for R to count nucleotides in a .bam
+ * or .cram alignment
+ * Copyright (C) 2015 drjsanger@github
  ***********************************************************************/
 
 #include <iostream>

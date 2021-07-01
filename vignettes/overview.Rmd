@@ -12,7 +12,7 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Overview
-In this vignette, we demonstrate the ability of mitoClone2 to identify mitochondrial variants from single-cell sequencing data of a single or multiple individuals without any *a priori* knowledge of pre-existing variants by capitalizing on either an extensive blacklist (that removes known/potential false-positive signals) OR information shared across multiple individuals. We note here that of these methods, the second, is the most powerful. The latter strategy relies on the assumption that biological noise (e.g. RNA editing) and technical noise (arising during either library preparation, RNA sequencing, read processing, or alignment steps of the experiment) should be consistent across samples from different individuals. On this end, each individual sample can then act as essentially a technical/pseudo-replicate for identification and elimination the mentioned artifacts. In situations where only a sample from only one invidiual is analyzed, we fall back on our standard filtering method using certain parameters but in this case reinforced by pre-constructed blacklist including information related to homo-polymers, repeat regions, RNA editing sites, and known sequencing artifacts.
+In this vignette, we demonstrate the ability of mitoClone2 to identify mitochondrial variants from single-cell sequencing data of a single or multiple individuals without any *a priori* knowledge of pre-existing variants by capitalizing on either an extensive exclusionlist (that removes known/potential false-positive signals) OR information shared across multiple individuals. We note here that of these methods, the second, is the most powerful. The latter strategy relies on the assumption that biological noise (e.g. RNA editing) and technical noise (arising during either library preparation, RNA sequencing, read processing, or alignment steps of the experiment) should be consistent across samples from different individuals. On this end, each individual sample can then act as essentially a technical/pseudo-replicate for identification and elimination the mentioned artifacts. In situations where only a sample from only one invidiual is analyzed, we fall back on our standard filtering method using certain parameters but in this case reinforced by pre-constructed exclusionlist including information related to homo-polymers, repeat regions, RNA editing sites, and known sequencing artifacts.
 
 ```{r results='hide', message=FALSE, warning=FALSE}
 library(mitoClone2)
@@ -76,10 +76,10 @@ print(head(baseCounts[[1]][13267:13277,]))
 ## Calling and filtering variants
 The next step of the analysis is to take your counts of each nucleotide in each cell and identify variants that are present. A major barrier in this process is the inherent noise present in single cell datasets. Although we will only briefly discuss the important aspects of filtering this is by far the most crucial step of the analysis. The prevelance of mitochondrial variants is highly variable, in some cases more or less depending on the dataset. It is wise to adjust the parameters in order to tailor them to each particular dataset - one size fits all does not apply here. It is critical to choose optimal parameters for a dataset and experimentation is often necessary.
 
-### Calling mutations based on a blacklist
+### Calling mutations based on a exclusionlist
 The simplest way to identify variants, beyond simply enriching for those that are present in only a fraction of the population, is by removing detected variants that are likely to be caused by noise (as previously discussed). One conservative approach to accomplish this is to simply remove all variants that overlap with problematic sites. As a side note, this type of approach will decrease false positive hits but may incidentally increase false negative hits. This type of method is used when a you only have a single sample from one individual/timepoint.
 
-The function `mutationCallsFromBlacklist` performs fltering and then removes blacklisted variants. Parameters:
+The function `mutationCallsFromExclusionlist` performs fltering and then removes exclusionlisted variants. Parameters:
 
 *  `lim.cov` is the minimum number of reads overlapping a site in a given single cell for it to be considered covered. The default value is 20.
 
@@ -91,7 +91,7 @@ The function `mutationCallsFromBlacklist` performs fltering and then removes bla
 
 *   `min.num.samples` is the number of cells that must be considered mutant for a given variant for that variant to be included. Again this value is highly dependent on the number and type of cells present in a given dataset. Default is set to 1% of cells.
 
-*   `blacklists` is the list of blacklists to use for filtering. The parameter should be a named list where each element in the list is a GRanges object. The GRanges object should contain the genomic coordinates of variants to be excluded from the analysis. In the provided blacklist, we have `three` which is stretchs of homopolymers on the mitochondrial chromosome of 3 bp or greater length, `masked` which are regions masked in the Refseq or UCSC genome releases (likely repetitive elements), regions identified from a previous study (these can be excluded in most cases), and `rnaEDIT` which are RNA editing sites from the REDIportal. **In all cases, these are relative to the 'hg38' genome coordinates** and should not be used with other genomes without a liftOver step.
+*   `exclusionlists` is the list of exclusionlists to use for filtering. The parameter should be a named list where each element in the list is a GRanges object. The GRanges object should contain the genomic coordinates of variants to be excluded from the analysis. In the provided exclusionlist, we have `three` which is stretchs of homopolymers on the mitochondrial chromosome of 3 bp or greater length, `masked` which are regions masked in the Refseq or UCSC genome releases (likely repetitive elements), regions identified from a previous study (these can be excluded in most cases), and `rnaEDIT` which are RNA editing sites from the REDIportal. **In all cases, these are relative to the 'hg38' genome coordinates** and should not be used with other genomes without a liftOver step.
 
 
 ### Calling mutations based on mutations shared within a cohort
@@ -121,9 +121,9 @@ To exemplify the use of these functions we are going to recreate figures from a 
 In this example, as a proof-of-concept, the experimenters used donor hematopoietic stem and progenitor cells (HSPCs) to derive cell colonies and then isolated cells from each for single-cell sequencing. As expected, the cells that were isolated from the same colony tended exhibit identical mitochondrial variants (i.e. they are indeed clonal).
 
 
-## Example Ludwig et al., Figure 5 **Blacklist filtering**
+## Example Ludwig et al., Figure 5 **Exclusionlist filtering**
 
-```{r fig5blacklist,fig.width = 6, fig.height=4}
+```{r fig5exclusionlist,fig.width = 6, fig.height=4}
 library(mitoClone2)
 library(pheatmap)
 
@@ -134,8 +134,8 @@ LudwigFig5.Counts <- lapply(LudwigFig5.Counts, function(x) x[,c('A','T','C','G',
 ## investigate what the ideal baseCounts object looks like
 print(head(LudwigFig5.Counts[[1]]))
 
-## calling mutations using our blacklist
-LudwigFig5 <- mutationCallsFromBlacklist(LudwigFig5.Counts, min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+## calling mutations using our exclusionlist
+LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts, min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
 
 ## setting up the meta data
 LudwigFig5.meta <- data.frame(row.names = rownames(LudwigFig5@N), Clone = gsub("_.*","",gsub("Donor1_","",rownames(LudwigFig5@N))))
@@ -185,7 +185,7 @@ Then, we call mitochondrial variants de novo and cluster using the `varCluster` 
 Of note, in this dataset there is quite a large number of variants present in all cells at a low level of heteroplasmy which is why we modify the `universal.var.cells` parameter accordingly.
 
 ```{r fig7new,fig.width = 6, fig.height=4, message=FALSE}
-LudwigFig7 <- mutationCallsFromBlacklist(LudwigFig7.Counts,min.af=0.1, min.num.samples=3, universal.var.cells = 0.25 * length(LudwigFig7.Counts), binarize = 0.1)
+LudwigFig7 <- mutationCallsFromExclusionlist(LudwigFig7.Counts,min.af=0.1, min.num.samples=3, universal.var.cells = 0.25 * length(LudwigFig7.Counts), binarize = 0.1)
 LudwigFig7 <- varCluster(LudwigFig7,method='SCITE')
 
 LudwigFig7@metadata$original <- factor(NA, levels = unique(originalAnn$Clone))

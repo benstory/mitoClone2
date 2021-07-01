@@ -21,7 +21,7 @@ baseCountsFromBamList(
 \item{ignore_nonstandard}{Ignore basecalls that are not AGCTN}
 }
 \value{
-A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromBlacklist}} or \code{\link{mutationCallsFromCohort}}
+A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
 }
 \description{
 Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell.

@@ -1,6 +1,6 @@
-#'Create a mutationCalls objects from nucleotide base calls and defines a blacklist (cohort)
+#'Create a mutationCalls objects from nucleotide base calls and defines a exclusionlist (cohort)
 #'
-#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The blacklist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromBlacklist}}
+#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
 #'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}} or \code{\link{bam2R_10x}}.
 #'@param patient A character vector associating each cell / entry in the \code{BaseCount} list with a patient
 #'@param sites Vector specifying genomic regions, defaults to the entire mitochondrial genome.
@@ -12,7 +12,7 @@
 #'@param MINFRAC.OTHER Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded. Fraction relative to the fraction of of cells from the patient where a variant is enriched.
 #'@param USE.REFERENCE Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@return A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{blacklist} containing a blacklist of sites with variants in several individuals
+#'@return A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{exclusionlist} containing a exclusionlist of sites with variants in several individuals
 #'@examples BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
 #'mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites="chrM:1-15000")
 #'@export
@@ -95,22 +95,22 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
         o <- mutationCallsFromMatrix(t(MN$M), t(MN$N))
     })
     names(out) <- unique(patient)
-    ## extract mutations that are shared in one or more patient for blacklist
-    out$blacklist <- rownames(varcount.bypatient[multipatient,])
-    out$blacklist <- gsub("(\\d+)(.+)","\\1 \\2", out$blacklist)
+    ## extract mutations that are shared in one or more patient for exclusionlist
+    out$exclusionlist <- rownames(varcount.bypatient[multipatient,])
+    out$exclusionlist <- gsub("(\\d+)(.+)","\\1 \\2", out$exclusionlist)
     return(out)
 }
 
-#'Create a mutationCalls object from nucleotide base calls using a blacklist (single individual)
+#'Create a mutationCalls object from nucleotide base calls using a exclusionlist (single individual)
 #'
-#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies. Applies two sets of filters: In the first step, filters on coverage and minimum allele frequency to exclude potentially noisy variants; in the second step, filters against a blacklist of variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). These blacklists are created using \code{\link{mutationCallsFromCohort}}
+#'Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies. Applies two sets of filters: In the first step, filters on coverage and minimum allele frequency to exclude potentially noisy variants; in the second step, filters against a exclusionlist of variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). These exclusionlists are created using \code{\link{mutationCallsFromCohort}}
 #'@param BaseCounts A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}
 #'@param lim.cov Minimal coverage required per cell for a cell to be classified as covered
 #'@param min.af Minimal allele frequency for a cell to be classified as mutant
 #'@param min.num.samples Minimal number of cells required to be classified as covered and mutant according to the thresholds set in \code{lim.cov} and \code{min.af}. Usually specified as a fraction of the total number of cells.
 #'@param universal.var.cells Maximum number of cells required to be classified as mutant according to the threshold set in \code{min.af.universal}.  Usually specified as a fraction of the total number of cells; serves to avoid e.g. germline variants.
 #'@param min.af.universal Minimal allele frequency for a cell to be classified as mutant, in the context of removing universal variants. Defaults to \code{min.af}, but can be set to lower values.
-#'@param blacklists.use Blacklists to use. The default blacklists object is included with this package and includes sites to exclude in GRanges format. The three blacklists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations) . These list can also be generated manually by a researcher.
+#'@param exclusionlists.use List of sites to exclude for variants calling. The default exclusionlists object included with this package contains exclude or hardmask in GRanges format. The four exclusionlists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations), and "rnaEDIT" which are sites that are subjected to RNA-editing according to the REDIportal. These lists can also be input manually by a researcher and provided as either coordinates (as a string) or as a GRanges objects.
 #'@param max.var.na Final filtering step: Remove all mutations with no coverage in more than this fraction of cells
 #'@param max.cell.na Final filtering step: Remove all cells with no coverage in more than this fraction of mutations
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
@@ -118,9 +118,9 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
 #'@param ... Parameters passed to \code{\link{mutationCallsFromMatrix}}
 #'@return An object of class \code{\link{mutationCalls}}
 #'@examples LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
-#'LudwigFig5 <- mutationCallsFromBlacklist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+#'LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
 #'@export
-mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), blacklists.use = blacklists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',cores=2,...) {
+mutationCallsFromExclusionlist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), exclusionlists.use = exclusionlists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',cores=2,...) {
     mito.dna <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
     varaf <- parallel::mclapply(BaseCounts,function(x){
         ## focus on A,G,C,T
@@ -148,14 +148,14 @@ mutationCallsFromBlacklist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.nu
     ##varaf <- varaf[rowSums(is.na(varaf))/length(BaseCounts) < max.fraction.na,]
     varaf <- varaf[rowSums(varaf > min.af,na.rm=TRUE) >= min.num.samples,]
     
-    is.names <- sapply(blacklists.use, function(x) typeof(x) == "character")
-                                        #part 2 - filter based on the blacklist
+    is.names <- sapply(exclusionlists.use, function(x) typeof(x) == "character")
+                                        #part 2 - filter based on the exclusionlist
     if(sum(is.names) > 0){
-        removal.names.list <- unique(unlist(blacklists.use[is.names]))
+        removal.names.list <- unique(unlist(exclusionlists.use[is.names]))
         varaf <- varaf[!row.names(varaf) %in% removal.names.list,]
     }
     if(sum(!is.names) > 0){
-        removal.ranges.list <- unique(unlist(GenomicRanges::GRangesList(blacklists.use[!is.names])))
+        removal.ranges.list <- unique(unlist(GenomicRanges::GRangesList(exclusionlists.use[!is.names])))
         varaf <- varaf[-c(S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(row.names(varaf)),removal.ranges.list))),]
     }
     ##if(drop.empty){

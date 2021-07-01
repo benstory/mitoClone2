@@ -5,7 +5,7 @@
 #'@param sites String specifying genomic regions, defaults to the entire mitochondrial genome.
 #'@param ncores Number of threads to use for the computation. Default 2
 #'@param ignore_nonstandard Ignore basecalls that are not AGCTN
-#'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromBlacklist}} or \code{\link{mutationCallsFromCohort}}
+#'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
 #'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
 #'@export
 baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=2, ignore_nonstandard=FALSE) {

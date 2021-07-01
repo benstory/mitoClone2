@@ -17,9 +17,9 @@ NULL
 #'@rdname data
 "N_P2"
 
-#' Mitochondrial blacklist
+#' Mitochondrial exclusionlist
 #'
-#' Blacklist of variants that are likely not true somatic mutations
+#' List of variants that are likely not true somatic mutations and should thus be excluded
 #' @format A list with three entries:
 #' #' \itemize{
 #'   \item \emph{three}: Regions of the mitochondrial genome that are within 1 nt of a 3-mer homopolymer (e.g. AAA)
@@ -27,4 +27,4 @@ NULL
 #'   \item \emph{masked}: Regions of the mitochondrial genome that are soft-masked in the UCSC or Ensembl annotations
 #'   \item \emph{rnaEDIT}: Regions of the mitochondrial genome that are thought to be subject to RNA-editing according to the REDIportal V2.0
 #' }
-"blacklists"
+"exclusionlists"

@@ -2,7 +2,7 @@
 % Please edit documentation in R/mutationCalling.R
 \name{mutationCallsFromCohort}
 \alias{mutationCallsFromCohort}
-\title{Create a mutationCalls objects from nucleotide base calls and defines a blacklist (cohort)}
+\title{Create a mutationCalls objects from nucleotide base calls and defines a exclusionlist (cohort)}
 \usage{
 mutationCallsFromCohort(
   BaseCounts,
@@ -42,10 +42,10 @@ mutationCallsFromCohort(
 \item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
 }
 \value{
-A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{blacklist} containing a blacklist of sites with variants in several individuals
+A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{exclusionlist} containing a exclusionlist of sites with variants in several individuals
 }
 \description{
-Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The blacklist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromBlacklist}}
+Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
 }
 \examples{
 BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")

@@ -31,10 +31,14 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
     }
     if(method == 'PhISCS'){
         write.table(usedata, file = file.path(tempfolder,"in.txt"), quote = FALSE, sep="\t",
-                    row.names = gsub("[><_]","",rownames(usedata)),col.names = gsub("[><_]","",colnames(usedata)))
-        
-        
-        base <- system.file("extdata/python/PhISCS-I",package = "mitoClone")
+                    row.names = gsub("[><_]","",rownames(usedata)),col.names = gsub("[><_]","",colnames(usedata)))                
+        if(!system("which PhISCS", intern = FALSE, ignore.stderr = TRUE, ignore.stdout = TRUE) == "0"){
+            stop("PhISCS not detected on your system!")
+        }else{
+            ##base <- system.file("extdata/python/PhISCS-I",package = "mitoClone")
+            base <- system("which samtools",intern=TRUE)
+        }
+
         command <- sprintf("%spython %s -SCFile %s -fn %.2f -fp %.2f -o %s -threads %d -time %d --drawTree",
                            ifelse(python_env =="", "", paste0(python_env,"; ")),
                            base, file.path(tempfolder,"in.txt"),
@@ -61,8 +65,7 @@ varCluster <- function(mutcalls, fn = 0.1, fp = 0.02, cores = 1, time =10000, te
         clone.names -> rownames(clones)
     }
     if(method == 'SCITE'){
-        ##base <- '/g/steinmetz/story/tools/SCITE/scite'
-        base <- system.file("extdata/SCITE",package = "mitoClone2")
+        base <- system.file("libs/scite",package = "mitoClone2")
         command <- sprintf("%s %s -i %s -names %s -n %d -max_treelist_size 1 -a -m %d -r 1 -l 200000 -ad %.2f -fd %.2f -o %s",
                            ifelse(python_env =="", "", paste0(python_env,"; ")),
                            base, file.path(tempfolder,"input_scite.txt"),
@@ -396,4 +399,3 @@ removeDepth <- function(list) {
   }
   out
 }
-
