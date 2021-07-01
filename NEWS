@@ -1,3 +1,8 @@
+\section{Version 0.99.2}{\itemize{
+\item
+Attempted fix for Windows C++ compile
+}}
+
 \section{Version 0.99.1}{\itemize{
 \item
 Added compatibility with multiple compilers and included SCITE's source directly

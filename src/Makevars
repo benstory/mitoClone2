@@ -14,8 +14,6 @@ PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
 ## fix for compilationg of external SCITE package courtesy of Mike Smith
 USER_LIB_DIR=${R_PACKAGE_DIR}/libs/
 
-CXX=`"${R_HOME}/bin/R" CMD config CXX`
-
 all: copying $(SHLIB)
 
 copying: scite

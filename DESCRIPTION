@@ -3,7 +3,7 @@ Type: Package
 Title: Clonal population identification in single-cell RNA-seq data
         using mitochondrial and somatic mutations
 LinkingTo: Rhtslib (>= 1.13.1)
-Version: 0.99.1
+Version: 0.99.2
 Authors@R: c( person(given = "Benjamin", family = "Story", role = c("aut", "cre"), email = "story.benjamin@gmail.com"),
 	   person(given = "Lars", family = "Velten", role = "aut"),
 	   person(given = "Gregor", family = "Mönke", role = "aut") )
