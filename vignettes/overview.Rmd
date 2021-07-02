@@ -51,7 +51,7 @@ Note: Be aware that this function calls `deepSNV::bam2R()` with default paramete
 
 ```{r baseCounts_bamlist}
 ## example using function for a list of BAM files
-baseCounts <- baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
+baseCounts <- baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
 print(length(baseCounts))
 print(head(baseCounts[[1]][13267:13277,]))
 ```
@@ -68,7 +68,7 @@ The **next function** is for reading in a multiplexed BAM file `bam2R_10x` takes
 
 ```{r baseCounts_10x_BAM}
 ## example using function for a multiplexed BAM files where cell barcodes contained within 'CB' tag
-baseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
+baseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000", ncores=1)
 print(length(baseCounts))
 print(head(baseCounts[[1]][13267:13277,]))
 ```

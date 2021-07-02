@@ -6,7 +6,7 @@
 #'@param ncores Number of threads to use for the computation. Default 2
 #'@param ignore_nonstandard Ignore basecalls that are not AGCTN
 #'@return A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
-#'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
+#'@examples baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
 #'@export
 baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=2, ignore_nonstandard=FALSE) {
     mito.chr <- GenomicRanges::GRanges(sites)
@@ -47,7 +47,7 @@ baseCountsFromBamList <- function(bamfiles, sites = "chrM:1-16569", ncores=2, ig
 #' For the intents and purposes of the mitoClone2 package this object is equivalent to the output from the \code{\link{baseCountsFromBamList}} function.
 #' The returned list has a variable length depending on the ignore_nonstandard parameter and each element contains a  matrix has 8 columns and (stop - start + 1) rows. The two strands have their counts merged. If no counts are present in the provided sites parameter nothing will be returned.
 #' IMPORTANT: The names of the list will NOT reflect the source filename and will exclusively be named based on the respective the barcodes extracted from said file. If merging multiple datasets, it is important to change the list's names  once imported to avoid naming collisions.
-#' @examples bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
+#' @examples bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000", ncores=1)
 #' @author Benjamin Story (adapted from original code with permission from Moritz Gerstung)
 #' @export bam2R_10x
 #' 
