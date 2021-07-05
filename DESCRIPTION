@@ -3,7 +3,7 @@ Type: Package
 Title: Clonal population identification in single-cell RNA-seq data
         using mitochondrial and somatic mutations
 LinkingTo: Rhtslib (>= 1.13.1)
-Version: 0.99.4
+Version: 0.99.5
 Authors@R: c( person(given = "Benjamin", family = "Story", role = c("aut", "cre"), email = "story.benjamin@gmail.com"),
 	   person(given = "Lars", family = "Velten", role = "aut"),
 	   person(given = "Gregor", family = "Mönke", role = "aut") )
@@ -18,7 +18,7 @@ Imports: reshape2, GenomicRanges, pheatmap, deepSNV, grDevices,
         graphics, stats, utils, S4Vectors, Rhtslib, parallel, methods, ggplot2
 Suggests: knitr, rmarkdown, Biostrings
 RoxygenNote: 7.1.0
-SystemRequirements: GNU make, SCITE (optional), PhISCS (optional)
+SystemRequirements: GNU make, PhISCS (optional)
 Packaged: 2021-06-20 21:50:22 UTC; story
 Depends: R (>= 4.0.0)
 NeedsCompilation: yes

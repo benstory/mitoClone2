@@ -60,7 +60,7 @@ This function uses a C interface to read the nucleotide counts on each position 
 This code is an adaption of code that was originally written by Moritz Gerstung for the deepSNV package
 }
 \examples{
-bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
+bamCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000", ncores=1)
 }
 \author{
 Benjamin Story (adapted from original code with permission from Moritz Gerstung)

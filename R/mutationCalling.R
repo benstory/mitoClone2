@@ -114,13 +114,13 @@ mutationCallsFromCohort <- function(BaseCounts, sites, patient, MINREADS = 5, MI
 #'@param max.var.na Final filtering step: Remove all mutations with no coverage in more than this fraction of cells
 #'@param max.cell.na Final filtering step: Remove all cells with no coverage in more than this fraction of mutations
 #'@param genome The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.
-#'@param cores number of cores to use for tabulating potential variants (defaults to 2)
+#'@param ncores number of cores to use for tabulating potential variants (defaults to 2)
 #'@param ... Parameters passed to \code{\link{mutationCallsFromMatrix}}
 #'@return An object of class \code{\link{mutationCalls}}
 #'@examples LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
 #'LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
 #'@export
-mutationCallsFromExclusionlist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), exclusionlists.use = exclusionlists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',cores=2,...) {
+mutationCallsFromExclusionlist <- function(BaseCounts,lim.cov=20, min.af=0.2, min.num.samples=0.01*length(BaseCounts), min.af.universal =min.af, universal.var.cells=0.95*length(BaseCounts), exclusionlists.use = exclusionlists, max.var.na = 0.5, max.cell.na = 0.95, genome='hg38',ncores=1,...) {
     mito.dna <- switch(genome, "hg38" = hg38.dna, "hg19" = hg19.dna, "mm10" = mm10.dna)
     varaf <- parallel::mclapply(BaseCounts,function(x){
         ## focus on A,G,C,T
@@ -142,7 +142,7 @@ mutationCallsFromExclusionlist <- function(BaseCounts,lim.cov=20, min.af=0.2, mi
         x <- x.af$af
         names(x) <- x.af$name
         return(x)
-    }, mc.cores=cores) #remove parallelism here
+    }, mc.cores=ncores) #remove parallelism here
     varaf <- do.call(cbind, varaf)
     ## you could allow for only sites with coverage! currently you filter at a rate of 10% cells dropping out max
     ##varaf <- varaf[rowSums(is.na(varaf))/length(BaseCounts) < max.fraction.na,]

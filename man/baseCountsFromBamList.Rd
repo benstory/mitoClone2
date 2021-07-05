@@ -27,5 +27,5 @@ A list of base count matrices which can serve as an input to \code{\link{mutatio
 Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell.
 }
 \examples{
-baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000")
+baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
 }
