@@ -3,12 +3,21 @@
 \docType{data}
 \name{data}
 \alias{data}
+\alias{exclusionlists}
 \alias{M_P1}
 \alias{N_P1}
 \alias{M_P2}
 \alias{N_P2}
-\title{Allele Count tables}
+\title{Mitochondrial exclusionlist}
 \format{
+A list with four entries:
+#' \itemize{
+  \item \emph{three}: Regions of the mitochondrial genome that are within 1 nt of a 3-mer homopolymer (e.g. AAA)
+  \item \emph{mutaseq}: Mutations in the mitochondrial genome that were reoccuring across patients (present in more than one individual in the MutaSeq dataset)
+  \item \emph{masked}: Regions of the mitochondrial genome that are soft-masked in the UCSC or Ensembl annotations
+  \item \emph{rnaEDIT}: Regions of the mitochondrial genome that are thought to be subject to RNA-editing according to the REDIportal V2.0
+}
+
 a data frame of variable sites (columns) across single cells (rows)
 
 An object of class \code{data.frame} with 1430 rows and 16 columns.
@@ -20,6 +29,8 @@ An object of class \code{data.frame} with 1066 rows and 22 columns.
 An object of class \code{data.frame} with 1066 rows and 22 columns.
 }
 \usage{
+exclusionlists
+
 M_P1
 
 N_P1
@@ -29,6 +40,8 @@ M_P2
 N_P2
 }
 \description{
+List of variants that are likely not true somatic mutations and should thus be excluded
+
 M: Mutant allele counts; N: Reference allele counts. P1: Patient 1; P2: Patient 2
 }
 \keyword{datasets}

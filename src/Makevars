@@ -12,7 +12,8 @@ PKG_LIBS=$(RHTSLIB_LIBS)
 PKG_CPPFLAGS=$(RHTSLIB_CPPFLAGS)
 
 ## fix for compilationg of external SCITE package courtesy of Mike Smith
-USER_LIB_DIR=${R_PACKAGE_DIR}/libs/
+USER_LIB_DIR=${R_PACKAGE_DIR}/SCITE/
+
 
 all: copying $(SHLIB)
 
@@ -22,4 +23,4 @@ copying: scite
 	rm scite
 
 scite:
-	$(CXX) $(PKG_CPPFLAGS) SCITEpkg/*.cpp -o scite
+	$(CXX) $(PKG_CPPFLAGS) ../inst/SCITEpkg/*.cpp -o scite

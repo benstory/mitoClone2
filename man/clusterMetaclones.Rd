@@ -7,17 +7,31 @@
 clusterMetaclones(mutcalls, min.lik = 1, plot = TRUE)
 }
 \arguments{
-\item{mutcalls}{mutcalls object of class \code{\link{mutationCalls}} for which \code{\link{varCluster}} has been run}
+\item{mutcalls}{mutcalls object of class \code{\link{mutationCalls}}
+for which \code{\link{varCluster}} has been run}
 
-\item{min.lik}{specifies the minimum difference in likelihood required. This parameter is set arbitrarily, see the vignette "Computation of clonal hierarchies and clustering of mutations" for more information.}
+\item{min.lik}{specifies the minimum difference in likelihood
+required. This parameter is set arbitrarily, see the vignette
+"Computation of clonal hierarchies and clustering of mutations"
+for more information.}
 
 \item{plot}{whether dendrograms should be plotted.}
 }
 \value{
-Returns the provided \code{\link{mutationCalls}} class object with an additional 'mainClone' metadata which allows for further refinement of clonal population and association of cells with a cluster of mutations (in this case clones).
+Returns the provided \code{\link{mutationCalls}} class
+object with an additional 'mainClone' metadata which allows for
+further refinement of clonal population and association of
+cells with a cluster of mutations (in this case clones).
 }
 \description{
-PhISCS orders all mutations into a hierarchical mutational tree; in many cases, the exact order of the acquisition of individual mutations in not unanimously determined from the data. This function computes the change in likelihood of the infered clonal assignment if two mutations are merged into a clone. Hierarchical clustering is then used to determine the clonal structure. The result is visualized and should be fine-tuned using the \code{min.lik} parameter.
+PhISCS orders all mutations into a hierarchical mutational tree; in
+many cases, the exact order of the acquisition of individual
+mutations in not unanimously determined from the data. This
+function computes the change in likelihood of the infered clonal
+assignment if two mutations are merged into a clone. Hierarchical
+clustering is then used to determine the clonal structure. The
+result is visualized and should be fine-tuned using the
+\code{min.lik} parameter.
 }
 \examples{
 P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))

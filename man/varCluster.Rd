@@ -13,36 +13,63 @@ varCluster(
   tempfolder = tempdir(),
   python_env = "",
   force_recalc = FALSE,
-  method = "PhISCS"
+  method = "SCITE"
 )
 }
 \arguments{
 \item{mutcalls}{object of class \code{\link{mutationCalls}}.}
 
-\item{fn}{false negative rate, i.e. the probability of only observing the reference allele if there is a mutation. #add gene-wise}
+\item{fn}{false negative rate, i.e. the probability of only
+observing the reference allele if there is a mutation. #add
+gene-wise}
 
-\item{fp}{false positive, i.e. the probability of observing the mutant allele if there is no mutation.}
+\item{fp}{false positive, i.e. the probability of observing the
+mutant allele if there is no mutation.}
 
 \item{cores}{number of cores to use for PhISCS (defaults to 1)}
 
-\item{time}{maximum time to be used for PhISCS optimization, in seconds (defaults to 10000)}
+\item{time}{maximum time to be used for PhISCS optimization, in
+seconds (defaults to 10000)}
 
 \item{tempfolder}{temporary folder to use for PhISCS output}
 
-\item{python_env}{Any shell commands to execute in order to make the gurobi python package available. The easiest solution is running R from an environment where the gurobi python package is avaiable. In some settings (e.g. RStudio Server), this parameter can be used instead. \code{muta_clone} executes PhISCS using a \code{system} call to python. The value of this parameter is prepended to the call. If you have a conda environment \code{myenv} that contains gurobipy, \code{source activate myenv} can work. Occassionally RStudio Server modifies your PATH so that that the conda and source commands are not available. In that case you can for example use \code{export PATH=/path/to/conda/:$PATH; source activate myenv}. easybuild users can \code{module load anaconda/v3; source activate myenv}}
+\item{python_env}{Any shell commands to execute in order to make the
+gurobi python package available. The easiest solution is
+running R from an environment where the gurobi python package
+is avaiable. In some settings (e.g. RStudio Server), this
+parameter can be used instead. \code{muta_clone} executes
+PhISCS using a \code{system} call to python. The value of this
+parameter is prepended to the call. If you have a conda
+environment \code{myenv} that contains gurobipy, \code{source
+activate myenv} can work. Occassionally RStudio Server modifies
+your PATH so that that the conda and source commands are not
+available. In that case you can for example use \code{export
+PATH=/path/to/conda/:$PATH; source activate myenv}. easybuild
+users can \code{module load anaconda/v3; source activate myenv}}
 
-\item{force_recalc}{Rerun PhISCS even if the \code{tempfolder} contains valid PhISCS output}
+\item{force_recalc}{Rerun PhISCS even if the \code{tempfolder}
+contains valid PhISCS output}
 
-\item{method}{A string variable of either PhISCS or SCITE depending on the tree-inferring software the user wants to use. Default: PhISCS}
+\item{method}{A string variable of either PhISCS or SCITE depending
+on the tree-inferring software the user wants to use. Default:
+PhISCS}
 }
 \value{
-an object of class \code{\link{mutationCalls}}, with an inferred tree structure and cell to clone assignment added.
+an object of class \code{\link{mutationCalls}}, with an
+inferred tree structure and cell to clone assignment added.
 }
 \description{
-From data on the observed mutational status of single cells at a number of genomic sites, computes a likely phylogenetic tree using PhISCS (https://github.com/sfu-compbio/PhISCS) and associates single cells with leaves of the tree.
-The function \code{\link{clusterMetaclones}} should be called on the output in order to group mutations into clones using a likelihood-based approach.
+From data on the observed mutational status of single cells at a
+number of genomic sites, computes a likely phylogenetic tree using
+PhISCS (https://github.com/sfu-compbio/PhISCS) and associates
+single cells with leaves of the tree.  The function
+\code{\link{clusterMetaclones}} should be called on the output in
+order to group mutations into clones using a likelihood-based
+approach.
 }
 \examples{
-load(system.file("extdata/LudwigFig7.Rda",package = "mitoClone2"))
-LudwigFig7 <- varCluster(LudwigFig7, python_env = "",method='SCITE')
+load(system.file("extdata/LudwigFig7.Rda",package =
+"mitoClone2"))
+LudwigFig7 <- varCluster(LudwigFig7,
+python_env = "",method='SCITE')
 }

@@ -13,15 +13,24 @@ mutationCallsFromMatrix(
 )
 }
 \arguments{
-\item{M}{A matrix of read counts mapping to the \emph{mutant} allele. Columns are genomic sites and rows and single cells.}
+\item{M}{A matrix of read counts mapping to the \emph{mutant}
+allele. Columns are genomic sites and rows and single cells.}
 
-\item{N}{A matrix of read counts mapping to the \emph{referece} allele. Columns are genomic sites and rows and single cells.}
+\item{N}{A matrix of read counts mapping to the \emph{referece}
+allele. Columns are genomic sites and rows and single cells.}
 
-\item{cluster}{If \code{NULL}, only mutations with coverage in 20 percent of the cells or more will be used for the clustering, and all other mutations will be used for cluster annotation only. Alternatively, a boolean vector of length \code{ncol(M)} that specifies the desired behavior for each genomic site.}
+\item{cluster}{If \code{NULL}, only mutations with coverage in 20
+percent of the cells or more will be used for the clustering,
+and all other mutations will be used for cluster annotation
+only. Alternatively, a boolean vector of length \code{ncol(M)}
+that specifies the desired behavior for each genomic site.}
 
-\item{metadata}{A data.frame of metadata that will be transfered to the final output where the \code{row.names(metadata)} correspond to the the \code{row.names(M)}.}
+\item{metadata}{A data.frame of metadata that will be transfered to
+the final output where the \code{row.names(metadata)}
+correspond to the the \code{row.names(M)}.}
 
-\item{binarize}{Allele frequency threshold to define a site as mutant (required for some clustering methods)}
+\item{binarize}{Allele frequency threshold to define a site as
+mutant (required for some clustering methods)}
 }
 \value{
 An object of class \code{\link{mutationCalls}}.
@@ -30,8 +39,10 @@ An object of class \code{\link{mutationCalls}}.
 To be used when allele-specific count matrices are available.
 }
 \examples{
-LudwigFig7.Counts <- readRDS(url('http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS'))
-known.variants <- c("8999 T>C","4818 G>A","11126 G>A","7228 A>G","5920 G>A","15734 G>A","14804 G>A")
-known.subset <- pullcountsVars(LudwigFig7.Counts, known.variants)
-known.subset <- mutationCallsFromMatrix(t(known.subset$M), t(known.subset$N), cluster = rep(TRUE, length(known.variants)))
+load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+## we have loaded the example.counts object
+known.variants <- c("8 T>C","4 G>A","11 G>A","7 A>G","5 G>A","15 G>A","14 G>A")
+known.subset <- pullcountsVars(example.counts, known.variants)
+known.subset <- mutationCallsFromMatrix(t(known.subset$M), t(known.subset$N),
+cluster = rep(TRUE, length(known.variants)))
 }

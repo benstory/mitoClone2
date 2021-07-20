@@ -4,24 +4,32 @@
 \alias{plotClones}
 \title{Plot clonal assignment of single cells}
 \usage{
-plotClones(mutcalls, what = "alleleRatio", show = c(), ...)
+plotClones(mutcalls, what = c("alleleFreq", "ternary"), show = c(), ...)
 }
 \arguments{
 \item{mutcalls}{object of class \code{\link{mutationCalls}}.}
 
-\item{what}{One of the following: \emph{alleleRatio}: The fraction of reads mapping to the mutant allele or \emph{ternary}: Ternarized mutation status}
+\item{what}{One of the following: \emph{alleleFreq}: The fraction of
+reads mapping to the mutant allele or \emph{ternary}:
+Ternarized mutation status}
 
-\item{show}{boolean vector specifying for each mutation if it should be plotted on top of the heatmap as metadata; defaults to mutations not used for the clustering \code{!mutcalls@cluster}}
+\item{show}{boolean vector specifying for each mutation if it should
+be plotted on top of the heatmap as metadata; defaults to
+mutations not used for the clustering \code{!mutcalls@cluster}}
 
 \item{...}{any arguments passed to \code{\link[pheatmap]{pheatmap}}}
 }
 \value{
-Returns TRUE only used for generating a PostScript tree image of the putative mutation tree
+Returns TRUE only used for generating a PostScript tree
+image of the putative mutation tree
 }
 \description{
-Creates a heatmap of single cell mutation calls, clustered using PhISCS.
+Creates a heatmap of single cell mutation calls, clustered using
+PhISCS.
 }
 \examples{
- P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
+P1 <-
+readRDS(system.file("extdata/sample_example1.RDS",package =
+"mitoClone2"))
 plotClones(P1)
 }

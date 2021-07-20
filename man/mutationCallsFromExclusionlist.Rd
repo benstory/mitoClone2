@@ -2,7 +2,8 @@
 % Please edit documentation in R/mutationCalling.R
 \name{mutationCallsFromExclusionlist}
 \alias{mutationCallsFromExclusionlist}
-\title{Create a mutationCalls object from nucleotide base calls using a exclusionlist (single individual)}
+\title{Create a mutationCalls object from nucleotide base calls using a
+exclusionlist (single individual)}
 \usage{
 mutationCallsFromExclusionlist(
   BaseCounts,
@@ -20,37 +21,77 @@ mutationCallsFromExclusionlist(
 )
 }
 \arguments{
-\item{BaseCounts}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}}
+\item{BaseCounts}{A list of base call matrices (one matrix per cell)
+as produced by \code{\link{baseCountsFromBamList}}}
 
-\item{lim.cov}{Minimal coverage required per cell for a cell to be classified as covered}
+\item{lim.cov}{Minimal coverage required per cell for a cell to be
+classified as covered}
 
-\item{min.af}{Minimal allele frequency for a cell to be classified as mutant}
+\item{min.af}{Minimal allele frequency for a cell to be classified
+as mutant}
 
-\item{min.num.samples}{Minimal number of cells required to be classified as covered and mutant according to the thresholds set in \code{lim.cov} and \code{min.af}. Usually specified as a fraction of the total number of cells.}
+\item{min.num.samples}{Minimal number of cells required to be
+classified as covered and mutant according to the thresholds
+set in \code{lim.cov} and \code{min.af}. Usually specified as a
+fraction of the total number of cells.}
 
-\item{min.af.universal}{Minimal allele frequency for a cell to be classified as mutant, in the context of removing universal variants. Defaults to \code{min.af}, but can be set to lower values.}
+\item{min.af.universal}{Minimal allele frequency for a cell to be
+classified as mutant, in the context of removing universal
+variants. Defaults to \code{min.af}, but can be set to lower
+values.}
 
-\item{universal.var.cells}{Maximum number of cells required to be classified as mutant according to the threshold set in \code{min.af.universal}.  Usually specified as a fraction of the total number of cells; serves to avoid e.g. germline variants.}
+\item{universal.var.cells}{Maximum number of cells required to be
+classified as mutant according to the threshold set in
+\code{min.af.universal}.  Usually specified as a fraction of
+the total number of cells; serves to avoid e.g. germline
+variants.}
 
-\item{exclusionlists.use}{List of sites to exclude for variants calling. The default exclusionlists object included with this package contains exclude or hardmask in GRanges format. The four exclusionlists included in this case are: "three" (hg38 sites that are part of homopolymer(e.g. AAA) of at least 3 bp in length), "mutaseq" (sites discovered to be overrepresented in AML SmartSeq2 data analysis from Velten et al 2021), "masked" (sites that are softmasked in either the UCSC or Refseq genome annotations), and "rnaEDIT" which are sites that are subjected to RNA-editing according to the REDIportal. These lists can also be input manually by a researcher and provided as either coordinates (as a string) or as a GRanges objects.}
+\item{exclusionlists.use}{List of sites to exclude for variants
+calling. The default exclusionlists object included with this
+package contains exclude or hardmask in GRanges format. The
+four exclusionlists included in this case are: "three" (hg38
+sites that are part of homopolymer(e.g. AAA) of at least 3 bp
+in length), "mutaseq" (sites discovered to be overrepresented
+in AML SmartSeq2 data analysis from Velten et al 2021),
+"masked" (sites that are softmasked in either the UCSC or
+Refseq genome annotations), and "rnaEDIT" which are sites that
+are subjected to RNA-editing according to the REDIportal. These
+lists can also be input manually by a researcher and provided
+as either coordinates (as a string) or as a GRanges objects.}
 
-\item{max.var.na}{Final filtering step: Remove all mutations with no coverage in more than this fraction of cells}
+\item{max.var.na}{Final filtering step: Remove all mutations with no
+coverage in more than this fraction of cells}
 
-\item{max.cell.na}{Final filtering step: Remove all cells with no coverage in more than this fraction of mutations}
+\item{max.cell.na}{Final filtering step: Remove all cells with no
+coverage in more than this fraction of mutations}
 
-\item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
+\item{genome}{The mitochondrial genome of the sample being
+investigated. Please note that this is the UCSC standard
+chromosome sequence. Default: hg38.}
 
-\item{ncores}{number of cores to use for tabulating potential variants (defaults to 2)}
+\item{ncores}{number of cores to use for tabulating potential
+variants (defaults to 2)}
 
-\item{...}{Parameters passed to \code{\link{mutationCallsFromMatrix}}}
+\item{...}{Parameters passed to
+\code{\link{mutationCallsFromMatrix}}}
 }
 \value{
 An object of class \code{\link{mutationCalls}}
 }
 \description{
-Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies. Applies two sets of filters: In the first step, filters on coverage and minimum allele frequency to exclude potentially noisy variants; in the second step, filters against a exclusionlist of variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). These exclusionlists are created using \code{\link{mutationCallsFromCohort}}
+Identifies relevant mitochondrial somatic variants from raw counts
+of nucleotide frequencies. Applies two sets of filters: In the
+first step, filters on coverage and minimum allele frequency to
+exclude potentially noisy variants; in the second step, filters
+against a exclusionlist of variants that were observed in several
+individuals and that therefore are unlikely to represent true
+somatic variants (e.g. RNA editing events). These exclusionlists
+are created using \code{\link{mutationCallsFromCohort}}
 }
 \examples{
-LudwigFig5.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig5_mc_out.RDS"))
-LudwigFig5 <- mutationCallsFromExclusionlist(LudwigFig5.Counts,min.af=0.05, min.num.samples=5, universal.var.cells = 0.5 * length(LudwigFig5.Counts), binarize = 0.1)
+load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+Example <- mutationCallsFromExclusionlist(example.counts,
+min.af=0.05, min.num.samples=5,
+universal.var.cells = 0.5 * length(example.counts),
+binarize = 0.1)
 }

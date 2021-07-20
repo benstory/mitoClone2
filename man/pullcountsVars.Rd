@@ -7,20 +7,23 @@
 pullcountsVars(BaseCounts, vars, cells = NULL)
 }
 \arguments{
-\item{BaseCounts}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}}}
+\item{BaseCounts}{A list of base call matrices (one matrix per cell)
+as produced by \code{\link{baseCountsFromBamList}}}
 
 \item{vars}{Character vector of variants to pull, in format 5643G>T}
 
-\item{cells}{Character vector for cells to select, or NULL if all cells from the input are to be used}
+\item{cells}{Character vector for cells to select, or NULL if all
+cells from the input are to be used}
 }
 \value{
-A list with two entries, M (count table on the variant allele) and N (count table on the reference allele)
+A list with two entries, M (count table on the variant
+allele) and N (count table on the reference allele)
 }
 \description{
 Pull variant counts
 }
 \examples{
-LudwigFig7.Counts <- readRDS(url("http://steinmetzlab.embl.de/mutaseq/fig7_nucleotide_counts_per_position.RDS"))
-known.variants <- c("9000 T>C","1234 G>A","1337 G>A")
-counts.known.vars <- pullcountsVars(LudwigFig7.Counts, vars=known.variants)
+load(system.file("extdata/example_counts.Rda",package = "mitoClone2"))
+known.variants <- c("9 T>C","12 G>A","13 G>A")
+counts.known.vars <- pullcountsVars(example.counts, vars=known.variants)
 }

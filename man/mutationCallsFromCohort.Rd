@@ -2,7 +2,8 @@
 % Please edit documentation in R/mutationCalling.R
 \name{mutationCallsFromCohort}
 \alias{mutationCallsFromCohort}
-\title{Create a mutationCalls objects from nucleotide base calls and defines a exclusionlist (cohort)}
+\title{Create a mutationCalls objects from nucleotide base calls and
+defines a exclusionlist (cohort)}
 \usage{
 mutationCallsFromCohort(
   BaseCounts,
@@ -19,35 +20,70 @@ mutationCallsFromCohort(
 )
 }
 \arguments{
-\item{BaseCounts}{A list of base call matrices (one matrix per cell) as produced by \code{\link{baseCountsFromBamList}} or \code{\link{bam2R_10x}}.}
+\item{BaseCounts}{A list of base call matrices (one matrix per cell)
+as produced by \code{\link{baseCountsFromBamList}} or
+\code{\link{bam2R_10x}}.}
 
-\item{sites}{Vector specifying genomic regions, defaults to the entire mitochondrial genome.}
+\item{sites}{Vector specifying genomic regions, defaults to the
+entire mitochondrial genome. Excepts a string but may be
+included as a GRanges object.}
 
-\item{patient}{A character vector associating each cell / entry in the \code{BaseCount} list with a patient}
+\item{patient}{A character vector associating each cell / entry in
+the \code{BaseCount} list with a patient}
 
-\item{MINREADS}{Minimum number of reads on a site in a single cell to qualify the site as covered}
+\item{MINREADS}{Minimum number of reads on a site in a single cell
+to qualify the site as covered}
 
-\item{MINCELL}{Minimum number of cells across the whole data set to cover a site}
+\item{MINCELL}{Minimum number of cells across the whole data set to
+cover a site}
 
-\item{MINFRAC}{Fraction of reads on the mutant allele to provisionally classify a cell as mutant}
+\item{MINFRAC}{Fraction of reads on the mutant allele to
+provisionally classify a cell as mutant}
 
-\item{MINCELLS.PATIENT}{Minimum number of mutant cells per patient to classify the mutation as relevant in that patient, AND}
+\item{MINCELLS.PATIENT}{Minimum number of mutant cells per patient
+to classify the mutation as relevant in that patient, AND}
 
-\item{MINFRAC.PATIENT}{Minimum fraction of mutant cells per patient to classify the mutation as relevant in that patient}
+\item{MINFRAC.PATIENT}{Minimum fraction of mutant cells per patient
+to classify the mutation as relevant in that patient}
 
-\item{MINFRAC.OTHER}{Minimum fraction of mutant cells identified in a second patient for the mutation to be excluded. Fraction relative to the fraction of of cells from the patient where a variant is enriched.}
+\item{MINFRAC.OTHER}{Minimum fraction of mutant cells identified in
+a second patient for the mutation to be excluded. Fraction
+relative to the fraction of of cells from the patient where a
+variant is enriched.}
 
-\item{USE.REFERENCE}{Boolean. The variant calls will be of the format REF>ALT where REF is decided based on the selected \code{genome} annotation. If set to FALSE, the reference allele will be the most abundant.}
+\item{USE.REFERENCE}{Boolean. The variant calls will be of the
+format REF>ALT where REF is decided based on the selected
+\code{genome} annotation. If set to FALSE, the reference allele
+will be the most abundant.}
 
-\item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
+\item{genome}{The mitochondrial genome of the sample being
+investigated. Please note that this is the UCSC standard
+chromosome sequence. Default: hg38.}
 }
 \value{
-A list of \code{\link{mutationCalls}} objects (one for each \code{patient}) and an entry named \code{exclusionlist} containing a exclusionlist of sites with variants in several individuals
+A list of \code{\link{mutationCalls}} objects (one for each
+\code{patient}) and an entry named \code{exclusionlist}
+containing a exclusionlist of sites with variants in several
+individuals
 }
 \description{
-Identifies relevant mitochondrial somatic variants from raw counts of nucleotide frequencies measured in single cells from several individuals. Applies two sets of filters: In the first step, filters on coverage to include potentially noisy variants; in the second step, compares allele frequencies between patients to remove variants that were observed in several individuals and that therefore are unlikely to represent true somatic variants (e.g. RNA editing events). The exclusionlist derived from the original Velten et al. 2021 dataset is available internal and can be used on single individuals using \code{\link{mutationCallsFromExclusionlist}}
+Identifies relevant mitochondrial somatic variants from raw counts
+of nucleotide frequencies measured in single cells from several
+individuals. Applies two sets of filters: In the first step,
+filters on coverage to include potentially noisy variants; in the
+second step, compares allele frequencies between patients to remove
+variants that were observed in several individuals and that
+therefore are unlikely to represent true somatic variants (e.g. RNA
+editing events). The exclusionlist derived from the original Velten
+et al. 2021 dataset is available internal and can be used on single
+individuals using \code{\link{mutationCallsFromExclusionlist}}
 }
 \examples{
-BaseCounts <- bam2R_10x(file = system.file("extdata", "mm10_10x.bam", package="mitoClone2"), sites="chrM:1-15000")
-mutCalls <- mutationCallsFromCohort(BaseCounts,patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),MINCELL=1,MINFRAC=0,MINCELLS.PATIENT=1,genome='mm10',sites="chrM:1-15000")
+sites.gr <- GenomicRanges::GRanges("chrM:1-15000")
+BaseCounts <- bam2R_10x(file = system.file("extdata",
+"mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
+mutCalls <- mutationCallsFromCohort(BaseCounts,
+patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),
+MINCELL=1, MINFRAC=0, MINCELLS.PATIENT=1, genome='mm10',
+sites=sites.gr)
 }

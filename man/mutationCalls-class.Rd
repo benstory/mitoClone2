@@ -6,30 +6,43 @@
 \alias{mutationCalls}
 \title{mutationCalls class}
 \description{
-To create this class from a list of bam files (where each bam file corresponds to a single cell), use \code{\link{mutationCallsFromCohort}} or \code{\link{mutationCallsFromExclusionlist}}.
-To create this class if you already have the matrices of mutation counts, use its contstructor, i.e. \code{mutationCallsFromMatrix(M = data1, N = data2)}.
+To create this class from a list of bam files (where each bam file corresponds
+to a single cell), use \code{\link{mutationCallsFromCohort}} or
+\code{\link{mutationCallsFromExclusionlist}}. To create this class if you
+already have the matrices of mutation counts, use its contstructor, i.e.
+\code{mutationCallsFromMatrix(M = data1, N = data2)}.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{M}}{A matrix of read counts mapping to the \emph{mutant} allele. Columns are genomic sites and rows and single cells.}
+\item{\code{M}}{A matrix of read counts mapping to the \emph{mutant} allele. Columns
+are genomic sites and rows and single cells.}
 
-\item{\code{N}}{A matrix of read counts mapping to the \emph{nonmutant} alleles. Columns are genomic sites and rows and single cells.}
+\item{\code{N}}{A matrix of read counts mapping to the \emph{nonmutant} alleles.
+Columns are genomic sites and rows and single cells.}
 
-\item{\code{ternary}}{Discretized version describing the mutational status of each gene in each cell, where 1 signfiies mutant, 0 signifies reference, and ? signifies dropout}
+\item{\code{ternary}}{Discretized version describing the mutational status of each
+gene in each cell, where 1 signfiies mutant, 0 signifies reference, and ?
+signifies dropout}
 
-\item{\code{cluster}}{Boolean vector of length \code{ncol(M)} specifying if the given mutation should be included for clustering (\code{TRUE}) or only used for annotation.}
+\item{\code{cluster}}{Boolean vector of length \code{ncol(M)} specifying if the given
+mutation should be included for clustering (\code{TRUE}) or only used for
+annotation.}
 
-\item{\code{metadata}}{Metadata frame for annotation of single cells (used for plotting). Row names should be the same as in \code{M}}
+\item{\code{metadata}}{Metadata frame for annotation of single cells (used for
+plotting). Row names should be the same as in \code{M}}
 
 \item{\code{tree}}{Inferred mutation tree}
 
-\item{\code{cell2clone}}{Probability matrix of single cells and their assignment to clones.}
+\item{\code{cell2clone}}{Probability matrix of single cells and their assignment to
+clones.}
 
 \item{\code{mut2clone}}{Maps mutations to main clones}
 
-\item{\code{mainClone}}{Probability matrix of single cells and their assignment to main clones}
+\item{\code{mainClone}}{Probability matrix of single cells and their assignment to
+main clones}
 
-\item{\code{treeLikelihoods}}{Likelihood matrix underlying the inference of main clones, see \code{\link{clusterMetaclones}}}
+\item{\code{treeLikelihoods}}{Likelihood matrix underlying the inference of main
+clones, see \code{\link{clusterMetaclones}}}
 }}
 

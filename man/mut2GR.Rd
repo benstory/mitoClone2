@@ -7,15 +7,17 @@
 mut2GR(mut)
 }
 \arguments{
-\item{mut}{The mutation to convert to a GRanges in the format of "position reference>alternate".}
+\item{mut}{The mutation to convert to a GRanges in the format of
+"position reference>alternate".}
 }
 \value{
-Returns a GRanges object containg the site of the variant along with reference/alternate allele data in the metacolumns
+Returns a GRanges object containg the site of the variant
+along with reference/alternate allele data in the metacolumns
 }
 \description{
 Convert mutation string to GRanges
 }
 \examples{
-mutation_as_granges <- mut2GR('1434 G>A')
-mutation_as_granges_no_space <- mut2GR('1434G>A')
+mutation.as.granges <- mut2GR('1434 G>A')
+mutation.as.granges.no.space <- mut2GR('1434G>A')
 }

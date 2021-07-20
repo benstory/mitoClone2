@@ -7,19 +7,28 @@
 overwriteMetaclones(mutcalls, mutation2clones)
 }
 \arguments{
-\item{mutcalls}{mutcalls object of class \code{\link{mutationCalls}} for which \code{\link{clusterMetaclones}} has been run}
+\item{mutcalls}{mutcalls object of class \code{\link{mutationCalls}}
+for which \code{\link{clusterMetaclones}} has been run}
 
-\item{mutation2clones}{Named integer vector that assigns mutations to clones. See the vignette 'Computation of clonal hierarchies and clustering of mutations' for an example.}
+\item{mutation2clones}{Named integer vector that assigns mutations
+to clones. See the vignette 'Computation of clonal hierarchies
+and clustering of mutations' for an example.}
 }
 \value{
-Returns the provided \code{\link{mutationCalls}} class object with the 'mainClone' metadata overwritten with the manual values provided by the user.
+Returns the provided \code{\link{mutationCalls}} class
+object with the 'mainClone' metadata overwritten with the
+manual values provided by the user.
 }
 \description{
-The function \code{\link{clusterMetaclones}} provides an automated way to group mutations into clones for subsequent analyses (such as differential expression analyses). In practice, it may make sense to overwrite these results manually. See the vignette 'Computation of clonal hierarchies and clustering of mutations' for an example.
+The function \code{\link{clusterMetaclones}} provides an automated
+way to group mutations into clones for subsequent analyses (such as
+differential expression analyses). In practice, it may make sense
+to overwrite these results manually. See the vignette 'Computation
+of clonal hierarchies and clustering of mutations' for an example.
 }
 \examples{
 P1 <- readRDS(system.file("extdata/sample_example1.RDS",package = "mitoClone2"))
 new.n <- seq(17)
-names(new.n) <- names(P1@mut2clone)
+names(new.n) <- names(getMut2Clone(P1))
 P1.newid <- overwriteMetaclones(P1,new.n)
 }

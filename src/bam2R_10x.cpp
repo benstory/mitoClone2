@@ -60,7 +60,7 @@ extern "C" {
     if ((int)pos >= nttable.beg && (int)pos < nttable.end)
       {
 	//set relative counts pointer to distance to start pos
-  	int* counts = nttable.counts + (int)pos - nttable.beg ;
+  	//int* counts = nttable.counts + (int)pos - nttable.beg ;
 	int count_offset = (int)pos - nttable.beg ;
 	//iterate through i starting at 0 to n_plp	
   	for (i=0; i<n_plp; i++)
@@ -92,41 +92,41 @@ extern "C" {
 	      {      
 		if(!absent && pre_b == cbase) continue;	     	     
 		if (p->is_tail){
-		  counts[s + len * nttable.nt_idx['$']]++;
+		  //counts[s + len * nttable.nt_idx['$']]++;
 		  dic[rg][count_offset + s + len * nttable.nt_idx['$']]++;
 		}
 		else if (p->is_head){
-		  counts[s + len * nttable.nt_idx['^']]++;
+		  //counts[s + len * nttable.nt_idx['^']]++;
 		  dic[rg][count_offset + s + len * nttable.nt_idx['^']]++;
 		}
 		if(p->qpos < nttable.head_clip || (bam_is_rev(p->b) && ((bam1_core_t)p->b->core).l_qseq - p->qpos < nttable.head_clip)){
-		  counts[s + len * nttable.nt_idx['N']]++;
+		  //counts[s + len * nttable.nt_idx['N']]++;
 		  //ADD N's
 		  dic[rg][count_offset + s + len * nttable.nt_idx['N']]++;
 		}else{
 		  if (!p->is_del) {
 		    int  c = seq_nt16_str[bam_seqi(bam_get_seq(p->b), p->qpos)];
 		    if( bam_get_qual(p->b)[p->qpos] > nttable.q){
-		      counts[s + len * nttable.nt_idx[char(c)]]++;
+		      //counts[s + len * nttable.nt_idx[char(c)]]++;
 		      dic[rg][count_offset + s + len * nttable.nt_idx[char(c)]]++;
 		    }
 		    else{
-		      counts[s + len * nttable.nt_idx['N']]++;
+		      //counts[s + len * nttable.nt_idx['N']]++;
 		      dic[rg][count_offset + s + len * nttable.nt_idx['N']]++;
 		    }
 		    if (p->indel > 0){
-		      counts[s + len * nttable.nt_idx['+']]++;
+		      //counts[s + len * nttable.nt_idx['+']]++;
 		      dic[rg][count_offset + s + len * nttable.nt_idx['+']]++;
 		    }
 		    else if (p->indel < 0){
-		      counts[s + len * nttable.nt_idx['-']]++;
+		      //counts[s + len * nttable.nt_idx['-']]++;
 		      dic[rg][count_offset + s + len * nttable.nt_idx['-']]++;
 		    }
 		  } else{
-		    counts[s + len * nttable.nt_idx['*']]++;
+		    //counts[s + len * nttable.nt_idx['*']]++;
 		    dic[rg][count_offset + s + len * nttable.nt_idx['*']]++;
 		  }
-		  counts[s + len * nttable.nt_idx['Q']] += p->b->core.qual;
+		  //counts[s + len * nttable.nt_idx['Q']] += p->b->core.qual;
 		  dic[rg][count_offset + s + len * nttable.nt_idx['Q']] += p->b->core.qual;
 		}
 	      }
@@ -142,7 +142,7 @@ extern "C" {
     const char* ref = CHAR(STRING_ELT(reftest,0));
     int* beg = INTEGER(begtest);
     int* end = INTEGER(endtest);
-    int counts[(*end-*beg+1)*11*2];
+    //int counts[(*end-*beg+1)*11*2];
     int* q = INTEGER(qtest);
     int* mq = INTEGER(mqtest);
     int* s = INTEGER(stest);
@@ -166,7 +166,7 @@ extern "C" {
     nttable.i = 0;
     
     std::map<std::string,std::vector<int> > dic;
-    nttable.counts = counts;
+    //nttable.counts = counts;
     int i;
     for (i=0; i<N; i++)
       nttable.nt_idx[NUCLEOTIDES[i]] = i;
@@ -283,9 +283,9 @@ extern "C" {
     	}
     	key_index++;
       }
-    // // /* assign names to list */
+    //assign names to list
     Rf_setAttrib(vec, R_NamesSymbol, labels);
-    // /* cleanup and return */ 
+    //cleanup and return
     UNPROTECT(2);
     return vec;
   }

@@ -13,15 +13,25 @@ mitoPlot(
 )
 }
 \arguments{
-\item{variants}{Character vector of variants to plot in format 5643G>T or 5643 G>T.}
+\item{variants}{Character vector of variants to plot in format
+5643G>T or 5643 G>T.}
 
-\item{patient}{Characet vector identifying which variant belongs to what clone. The order should match that of the 'vars' parameter and shoul dbe of identical length. If none is provided, the function assumes all variants are from one single sample which will be named "Main Clone". Default: NULL.}
+\item{patient}{Characet vector identifying which variant belongs to
+what clone. The order should match that of the 'vars' parameter
+and shoul dbe of identical length. If none is provided, the
+function assumes all variants are from one single sample which
+will be named "Main Clone". Default: NULL.}
 
-\item{genome}{The mitochondrial genome of the sample being investigated. Please note that this is the UCSC standard chromosome sequence. Default: hg38.}
+\item{genome}{The mitochondrial genome of the sample being
+investigated. Please note that this is the UCSC standard
+chromosome sequence. Default: hg38.}
 
-\item{showLegend}{Boolean for whether or not the gene legend should be present in the final output plot. Default: TRUE.}
+\item{showLegend}{Boolean for whether or not the gene legend should
+be present in the final output plot. Default: TRUE.}
 
-\item{showLabel}{Boolean for whether or not the name of the variant should be shown as a label in the final output plot. Default: TRUE.}
+\item{showLabel}{Boolean for whether or not the name of the variant
+should be shown as a label in the final output plot. Default:
+TRUE.}
 }
 \value{
 A ggplot object illustrating the clone specific mutations.

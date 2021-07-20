@@ -2,30 +2,38 @@
 % Please edit documentation in R/bam_functions.R
 \name{baseCountsFromBamList}
 \alias{baseCountsFromBamList}
-\title{Create a list object from a list of single-cell BAM files where each contains a matrix of the of AGCT nt counts at chosen sites}
+\title{Create a list object from a list of single-cell BAM files where each
+contains a matrix of the of AGCT nt counts at chosen sites}
 \usage{
 baseCountsFromBamList(
   bamfiles,
   sites = "chrM:1-16569",
-  ncores = 2,
+  ncores = 1,
   ignore_nonstandard = FALSE
 )
 }
 \arguments{
 \item{bamfiles}{A character vector specifying the bam file paths}
 
-\item{sites}{String specifying genomic regions, defaults to the entire mitochondrial genome.}
+\item{sites}{String specifying genomic regions, defaults to the
+entire mitochondrial genome}
 
-\item{ncores}{Number of threads to use for the computation. Default 2}
+\item{ncores}{Number of threads to use for the computation. Default
+1}
 
 \item{ignore_nonstandard}{Ignore basecalls that are not AGCTN}
 }
 \value{
-A list of base count matrices which can serve as an input to \code{\link{mutationCallsFromExclusionlist}} or \code{\link{mutationCallsFromCohort}}
+A list of base count matrices which can serve as an input to
+\code{\link{mutationCallsFromExclusionlist}} or
+\code{\link{mutationCallsFromCohort}}
 }
 \description{
-Uses the \code{deepSNV} package to count nucleotide frequencies at every position in the mitochondrial genome for every cell.
+Uses the \code{deepSNV} package to count nucleotide frequencies at
+every position in the mitochondrial genome for every cell.
 }
 \examples{
-baseCountsFromBamList(bamfiles = list(system.file("extdata", "mm10_10x.bam", package="mitoClone2")), sites="chrM:1-15000", ncores=1)
+bamCounts <- baseCountsFromBamList(bamfiles =
+list(system.file("extdata", "mm10_10x.bam",
+package="mitoClone2")),sites="chrM:1-15000", ncores=1)
 }
