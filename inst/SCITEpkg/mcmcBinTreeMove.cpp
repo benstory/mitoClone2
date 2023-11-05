@@ -72,6 +72,7 @@ int pickNodeToMove(int* currTreeParentVec, int parentVectorLength){
 			return v;
 		}                                      // for a binary tree with more than two leafs this can not be an infinite loop
 	}
+	return -1; // Failsafe return added by story nov 5th 2023 
 }
 
 
