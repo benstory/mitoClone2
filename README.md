@@ -9,7 +9,7 @@ The R package is used for performing the analysis of clonal heterogeneity based 
    - Python 2.7, 3.6, or 3.7 (optional)
    - Gurobi 9.0.0+ (optional)
    
-Importantly, depending on the user's need for tree-building, an installation of PhiSCS may be necessary. For SCITE, the program should be installed automatically when the mitoClone2 package is installed. Please read the manual provided by the software authors [SCITE Installation Instructions](https://github.com/cbg-ethz/SCITE) to better understand the software. In the latter case, both Gurobi and the gurobipy python package, [Gurobi Installation Instructions](https://www.gurobi.com/documentation/9.0/quickstart_mac/software_installation_guid.html) and [Instructions for Installing gurobipy](https://support.gurobi.com/hc/en-us/articles/360044290292-How-do-I-install-Gurobi-for-Python-]) are necessary. Gurobi is freely available for academic users see [the website](http://www.gurobi.com).
+Importantly, depending on the user's need for tree-building, an installation of PhiSCS may be necessary. For SCITE, the program should be installed automatically when the mitoClone2 package is installed. Please read the manual provided by the software authors [SCITE Installation Instructions](https://github.com/cbg-ethz/SCITE) to better understand the software.
 
 See **DESCRIPTION** file for specific R package requirements.
 
