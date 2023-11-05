@@ -19,12 +19,12 @@ The software has been successfully implemented and tested using: Python 3.6.5, R
 For manual package installation use the command:
 
 ``` r
-## install via Bioconductor
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install('mitoClone2')
+## NOT WORKING
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+#BiocManager::install('mitoClone2')
 ## use devtools to install
-##devtools::install_github("benstory/mitoClone2")
+devtools::install_github("benstory/mitoClone2")
 
 ```
 
