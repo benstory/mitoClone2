@@ -1,6 +1,8 @@
 /*
  * findBestTrees_noR.cpp
  *
+ *  Modified sample to sampleID on: Nov 5, 2023
+ *      Author: story
  *  Created on: Mar 27, 2015
  *      Author: jahnka
  */
@@ -58,7 +60,7 @@ double fd;          // rate of false discoveries (false positives 0->1)
 double ad1;          // rate of allelic dropout (false negatives 1->0)
 double ad2 = 0.0;         // rate of allelic dropout (2->1)
 double cc = 0.0;          // rate of falsely discovered homozygous mutations (0->2)
-bool sample = false;
+bool sampleID = false;
 int sampleStep;
 bool useGeneNames = false;        // use gene names in tree plotting
 string geneNameFile;              // file where the gene names are listed.
@@ -97,7 +99,7 @@ int main(int argc, char* argv[])
 	if(trueTreeComp==true){ trueParentVec = getParentVectorFromGVfile(trueTreeFileName, n); }
 
 	/**  Find best scoring trees by MCMC  **/
-	sampleOutput = runMCMCbeta(optimalTrees, errorRates, rep, loops, gamma, moveProbs, n, m, dataMatrix, scoreType, trueParentVec, sampleStep, sample, chi, priorSd, useTreeList, treeType);
+	sampleOutput = runMCMCbeta(optimalTrees, errorRates, rep, loops, gamma, moveProbs, n, m, dataMatrix, scoreType, trueParentVec, sampleStep, sampleID, chi, priorSd, useTreeList, treeType);
 
 
 	/***  output results  ***/
@@ -286,7 +288,7 @@ int readParameters(int argc, char* argv[]){
 		} else if(strcmp(argv[i], "-p")==0) {
 			if (i + 1 < argc) {
 				sampleStep = atoi(argv[++i]);
-				sample = true;
+				sampleID = true;
 			}
 		}else if (strcmp(argv[i], "-names")==0) {
 			useGeneNames = true;

@@ -1,6 +1,8 @@
 /*
  * mcmc.h
  *
+ *  Modified sample to sampleID on: Nov 5, 2023
+ *      Author: story
  *  Created on: Mar 27, 2015
  *      Author: jahnka
  */
@@ -8,7 +10,7 @@
 #ifndef MCMC_H
 #define MCMC_H
 
-string runMCMCbeta(vector<struct treeBeta>& bestTrees, double* errorRates, int noOfReps, int noOfLoops, double gamma, vector<double> moveProbs, int n, int m, int** dataMatrix, char scoreType, int* trueParentVec, int step, bool sample, double chi, double priorSd, bool useTreeList, char treeType);
+string runMCMCbeta(vector<struct treeBeta>& bestTrees, double* errorRates, int noOfReps, int noOfLoops, double gamma, vector<double> moveProbs, int n, int m, int** dataMatrix, char scoreType, int* trueParentVec, int step, bool sampleID, double chi, double priorSd, bool useTreeList, char treeType);
 double logBetaPDF(double x, double bpriora, double bpriorb);
 double proposeNewBeta(double currBeta, double jumpSd);
 double sampleNormal(double mean, double sd);

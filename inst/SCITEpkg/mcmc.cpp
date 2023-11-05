@@ -1,6 +1,8 @@
 /*
  * mcmc.cpp
  *
+ *  Modified sample to sampleID on: Nov 5, 2023
+ *      Author: story
  *  Created on: Mar 27, 2015
  *      Author: jahnka
  */
@@ -41,7 +43,7 @@ double burnInPhase = 0.25;    // first quarter of steps are burn in phase
 
 
 /* This runs the MCMC for learning the tree and beta, or only the tree with a fixed beta, it samples from the posterior and/or records the optimal trees/beta */
-std::string runMCMCbeta(vector<struct treeBeta>& bestTrees, double* errorRates, int noOfReps, int noOfLoops, double gamma, vector<double> moveProbs, int n, int m, int** dataMatrix, char scoreType, int* trueParentVec, int step, bool sample, double chi, double priorSd, bool useTreeList, char treeType){
+std::string runMCMCbeta(vector<struct treeBeta>& bestTrees, double* errorRates, int noOfReps, int noOfLoops, double gamma, vector<double> moveProbs, int n, int m, int** dataMatrix, char scoreType, int* trueParentVec, int step, bool sampleID, double chi, double priorSd, bool useTreeList, char treeType){
 
 
 	unsigned int optStatesAfterBurnIn = 0;
@@ -144,7 +146,7 @@ std::string runMCMCbeta(vector<struct treeBeta>& bestTrees, double* errorRates, 
         	}
 
         	/* Sample from the posterior if required and past the burn-in phase */
-        	if(sample && it>=burnIn && it % step == 0){
+        	if(sampleID && it>=burnIn && it % step == 0){
         		sampleOutput << sampleFromPosterior(currTreeLogScore, parentVectorSize, currTreeParentVec, moveProbs[0], currBeta, currScore);
         	}
 
