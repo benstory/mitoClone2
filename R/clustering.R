@@ -558,6 +558,9 @@ clusterMetaclones <- function(mutcalls,
 #'@param genome The mitochondrial genome of the sample being
 #'investigated. Please note that this is the UCSC standard
 #'chromosome sequence. Default: hg38.
+#'@param customGenome A GRanges object containing a custom annotation.
+#'If provided, this genome will be used instead of the predefined options
+#'specified by the `genome` parameter. Default is NULL.
 #'@param showLegend Boolean for whether or not the gene legend should
 #'be present in the final output plot. Default: TRUE.
 #'@param showLabel Boolean for whether or not the name of the variant
@@ -570,14 +573,19 @@ clusterMetaclones <- function(mutcalls,
 mitoPlot <- function(variants,
                      patient = NULL,
                      genome = 'hg38',
+                     customGenome = NULL,
                      showLegend = TRUE,
                      showLabel = TRUE) {
     mito.var <- mut2GR(variants)
-    mito.gr <-
-        switch(genome,
-               "hg38" = hg38.mito,
-               "hg19" = hg19.mito,
-               "mm10" = mm10.mito)
+    if (!is.null(customGenome)) {
+      # Use custom genome if provided
+      mito.gr <- customGenome
+    } else {
+      mito.gr <- switch(genome,
+                        "hg38" = hg38.mito,
+                        "hg19" = hg19.mito,
+                        "mm10" = mm10.mito)
+    }
     mito.gr <- mito.gr[mito.gr$gene_biotype != 'Mt_tRNA']
     S4Vectors::mcols(mito.gr) <-
         S4Vectors::mcols(mito.gr)[, c('external_gene_name'), drop = FALSE]

@@ -40,6 +40,9 @@
 #'@param genome The mitochondrial genome of the sample being
 #'investigated. Please note that this is the UCSC standard
 #'chromosome sequence. Default: hg38.
+#'@param customGenome A GRanges object containing a custom annotation. If
+#'provided, this genome will be used instead of the predefined options
+#'specified by the `genome` parameter. Default is NULL.
 #'@return A list of \code{\link{mutationCalls}} objects (one for each
 #'\code{patient}) and an entry named \code{exclusionlist}
 #'containing a exclusionlist of sites with variants in several
@@ -62,7 +65,8 @@ mutationCallsFromCohort <- function(BaseCounts,
                                     MINFRAC.PATIENT = 0.01,
                                     MINFRAC.OTHER = 0.1,
                                     USE.REFERENCE = TRUE,
-                                    genome = 'hg38') {
+                                    genome = 'hg38',
+                                    customGenome = NULL) {
     message("Making sure 'sites' parameter is set correctly...")
     if (!length(sites) == 1) {
         stop('Your sites parameter must be a character vector or GRanges object of length 1')
@@ -73,19 +77,23 @@ mutationCallsFromCohort <- function(BaseCounts,
     ntcountsArray <- aperm(ntcountsArray, c(1, 3, 2))
     ntcountsArray <- ntcountsArray[, , c('A', 'T', 'C', 'G', 'N')]
     if (USE.REFERENCE) {
-        reference <-
-            switch(genome,
-                   "hg38" = hg38.dna,
-                   "hg19" = hg19.dna,
-                   "mm10" = mm10.dna)
-        reference <-
-            reference[GenomicRanges::start(sites):GenomicRanges::end(sites)]
-        message(paste0(
-            'Looks good. Using the UCSC ',
-            genome,
-            ' genome as a reference for variants.',
-            ' Be wary, only mitochondrial annotations are available!'
-        ))
+      if (!is.null(customGenome)) {
+        # Use custom genome if provided
+        reference <- customGenome
+      } else {
+        reference <- switch(genome,
+                            "hg38" = hg38.mito,
+                            "hg19" = hg19.mito,
+                            "mm10" = mm10.mito)
+      }
+      reference <-
+        reference[GenomicRanges::start(sites):GenomicRanges::end(sites)]
+      message(paste0(
+        'Looks good. Using the UCSC ',
+        genome,
+        ' genome as a reference for variants.',
+        ' Be wary, only mitochondrial annotations are available!'
+      ))
     } else{
         message(paste0(
             'Looks good. However, the mutation names are run specific and may include N.'
