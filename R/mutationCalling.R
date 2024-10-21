@@ -82,9 +82,9 @@ mutationCallsFromCohort <- function(BaseCounts,
         reference <- customGenome
       } else {
         reference <- switch(genome,
-                            "hg38" = hg38.mito,
-                            "hg19" = hg19.mito,
-                            "mm10" = mm10.mito)
+                            "hg38" = hg38.dna,
+                            "hg19" = hg19.dna,
+                            "mm10" = mm10.dna)
       }
       reference <-
         reference[GenomicRanges::start(sites):GenomicRanges::end(sites)]
@@ -245,6 +245,9 @@ mutationCallsFromCohort <- function(BaseCounts,
 #'@param genome The mitochondrial genome of the sample being
 #'investigated. Please note that this is the UCSC standard
 #'chromosome sequence. Default: hg38.
+#'@param customDNA A character vector containing a custom DNA sequence. If
+#'provided, this sequence will be used instead of the predefined options
+#'specified by the `genome` parameter. Default is NULL.
 #'@param ncores number of cores to use for tabulating potential
 #'variants (defaults to 2)
 #'@param ... Parameters passed to
@@ -266,12 +269,22 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
                                            max.var.na = 0.5,
                                            max.cell.na = 0.95,
                                            genome = 'hg38',
+                                           customDNA = NULL,
                                            ncores = 1,
                                            ...) {
+    if (!is.null(customDNA)) {
+    # Use custom genome sequence if provided
+    mito.dna <- customDNA
+    } else {
     mito.dna <- switch(genome,
                        "hg38" = hg38.dna,
                        "hg19" = hg19.dna,
                        "mm10" = mm10.dna)
+    
+    }
+    if (!is.null(customDNA) | genome != 'hg38'){
+      print('Be aware! The provided exclusionlists are defined based on HUMAN GENOME hg38. Provide custom lists if this is not your genome.')
+    }
     varaf <- parallel::mclapply(BaseCounts, function(x) {
         ## focus on A,G,C,T
         x <- x[, c('A', 'T', 'C', 'G')]
