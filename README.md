@@ -1,19 +1,18 @@
 # mitoClone2 <img src='man/figures/logo.png' align="right" height="139" />
 
-The R package is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing. It is a new and improved version of the package, mitoClone, originally described by [Velten et al. (2021)](https://www.nature.com/articles/s41467-021-21650-1).
+The R package is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing.
 
 ## 1. System Requirements:
    - Linux/Mac
    - R 4.0+
-   - SCITE/PhISCS
+   - SCITE/PhISCS (included)
    - Python 2.7, 3.6, or 3.7 (optional)
-   - Gurobi 9.0.0+ (optional)
    
 Importantly, depending on the user's need for tree-building, an installation of PhiSCS may be necessary. For SCITE, the program should be installed automatically when the mitoClone2 package is installed. Please read the manual provided by the software authors [SCITE Installation Instructions](https://github.com/cbg-ethz/SCITE) to better understand the software.
 
 See **DESCRIPTION** file for specific R package requirements.
 
-The software has been successfully implemented and tested using: Python 3.6.5, R 4.0.0, and Gurobi 9.0.3 on CentOS 7.
+The software has been successfully implemented and tested using: Python 3.6.5, R 4.0.0, and on Ubuntu 18.04, CentOS 7, macOS 14.5, and Windows 11.
 
 ## 2. Installation
 For manual package installation use the command:
