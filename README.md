@@ -2,7 +2,8 @@
 
 The R package is used for performing the analysis of clonal heterogeneity based on nuclear and mitochondrial mutations in single cell RNA or DNA sequencing.
 
-You can read about the package and explore an extensive vignette in our accompanying publication:
+You can read about the package and explore an extensive vignette in the supplemental section of our accompanying publication:
+
 **Story B**, **Velten L**, **Mönke G**, **Annan A**, **Steinmetz L**. Mitoclone2: an R package for elucidating clonal structure in single-cell RNA-sequencing data using mitochondrial variants. *NAR Genomics and Bioinformatics*. 2024;6(3):lqae095. Published 2024 Aug 9. [doi:10.1093/nargab/lqae095](https://doi.org/10.1093/nargab/lqae095)
 
 
