@@ -1,0 +1,15 @@
+bibentry("Article", 
+         key = "StoryNARGenBioinfo2024",
+         author = personList(as.person("Benjamin Story"), 
+                             as.person("Lars Velten"), 
+                             as.person("Gregor Mönke"), 
+                             as.person("Ahrmad Annan"), 
+                             as.person("Lars Steinmetz")),
+         title = "Mitoclone2: an R package for elucidating clonal structure in single-cell RNA-sequencing data using mitochondrial variants",
+         journal = "NAR Genomics and Bioinformatics",
+         volume = "6",
+         number = "3",
+         pages = "lqae095",
+         year = "2024",
+         doi = "10.1093/nargab/lqae095"
+)
