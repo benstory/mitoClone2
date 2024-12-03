@@ -2,6 +2,7 @@
 export("baseCountsFromBamList","mutationCallsFromCohort","mutationCallsFromExclusionlist","mut2GR","pullcountsVars","mutationCallsFromMatrix")
 export("varCluster","quick_cluster","clusterMetaclones","overwriteMetaclones","plotClones","getCloneLikelihood","removeWindow","mitoPlot")
 export("getAlleleCount","setVarsCandidate","getVarsCandidate","getMut2Clone")
+export("exclusionlists")
 export("bam2R_10x")
 import(Rhtslib)
 importFrom("grDevices", "colorRampPalette")

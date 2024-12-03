@@ -86,6 +86,8 @@ baseCountsFromBamList <- function(bamfiles,
 #'final output. Default FALSE. If you have an inflation of
 #'spliced mitochondrial reads it is recommended to set this to
 #'TRUE.
+#'@param min_reads_per_barcode Int defining how many reads a barcode
+#'must for it to be considered in the pileup tabulations. Default 50
 #' @return A named \code{\link{list}} of \code{\link{matrix}} with
 #'rows corresponding to genomic positions and columns for the
 #'nucleotide counts (A, T, C, G, -), masked nucleotides (N),
@@ -124,7 +126,8 @@ bam2R_10x <- function(file,
                       keepflag = 0,
                       max.mismatches = NULL,
                       ncores = 1,
-                      ignore_nonstandard = FALSE) {
+                      ignore_nonstandard = FALSE,
+                      min_reads_per_barcode = 50) {
     if (!length(sites) == 1) {
         stop('Your sites parameter must be a character/GRanges object of length 1')
     }
@@ -150,7 +153,8 @@ bam2R_10x <- function(file,
         as.integer(verbose),
         as.integer(mask),
         as.integer(keepflag),
-        as.integer(max.mismatches)
+        as.integer(max.mismatches),
+        as.integer(min_reads_per_barcode)
     )
     barcode.n <- names(result)
     result <- parallel::mclapply(result, function(mat) {
