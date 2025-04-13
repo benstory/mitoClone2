@@ -51,7 +51,7 @@
 #'BaseCounts <- bam2R_10x(file = system.file("extdata",
 #'"mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
 #'mutCalls <- mutationCallsFromCohort(BaseCounts,
-#'patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),
+#'patient=c('sample2','sample1','sample2','sample2','sample1'),
 #'MINCELL=1, MINFRAC=0, MINCELLS.PATIENT=1, genome='mm10',
 #'sites=sites.gr)
 #'@export
