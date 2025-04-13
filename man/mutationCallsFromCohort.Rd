@@ -16,7 +16,8 @@ mutationCallsFromCohort(
   MINFRAC.PATIENT = 0.01,
   MINFRAC.OTHER = 0.1,
   USE.REFERENCE = TRUE,
-  genome = "hg38"
+  genome = "hg38",
+  customGenome = NULL
 )
 }
 \arguments{
@@ -59,6 +60,10 @@ will be the most abundant.}
 \item{genome}{The mitochondrial genome of the sample being
 investigated. Please note that this is the UCSC standard
 chromosome sequence. Default: hg38.}
+
+\item{customGenome}{A GRanges object containing a custom annotation. If
+provided, this genome will be used instead of the predefined options
+specified by the `genome` parameter. Default is NULL.}
 }
 \value{
 A list of \code{\link{mutationCalls}} objects (one for each
@@ -83,7 +88,7 @@ sites.gr <- GenomicRanges::GRanges("chrM:1-15000")
 BaseCounts <- bam2R_10x(file = system.file("extdata",
 "mm10_10x.bam", package="mitoClone2"), sites=sites.gr)
 mutCalls <- mutationCallsFromCohort(BaseCounts,
-patient=c('sample2','sample1','sample2','sample2','sample1','sample2'),
+patient=c('sample2','sample1','sample2','sample2','sample1'),
 MINCELL=1, MINFRAC=0, MINCELLS.PATIENT=1, genome='mm10',
 sites=sites.gr)
 }

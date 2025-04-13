@@ -8,6 +8,7 @@ mitoPlot(
   variants,
   patient = NULL,
   genome = "hg38",
+  customGenome = NULL,
   showLegend = TRUE,
   showLabel = TRUE
 )
@@ -25,6 +26,10 @@ will be named "Main Clone". Default: NULL.}
 \item{genome}{The mitochondrial genome of the sample being
 investigated. Please note that this is the UCSC standard
 chromosome sequence. Default: hg38.}
+
+\item{customGenome}{A GRanges object containing a custom annotation.
+If provided, this genome will be used instead of the predefined options
+specified by the `genome` parameter. Default is NULL.}
 
 \item{showLegend}{Boolean for whether or not the gene legend should
 be present in the final output plot. Default: TRUE.}

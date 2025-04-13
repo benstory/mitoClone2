@@ -16,6 +16,7 @@ mutationCallsFromExclusionlist(
   max.var.na = 0.5,
   max.cell.na = 0.95,
   genome = "hg38",
+  customDNA = NULL,
   ncores = 1,
   ...
 )
@@ -68,6 +69,10 @@ coverage in more than this fraction of mutations}
 \item{genome}{The mitochondrial genome of the sample being
 investigated. Please note that this is the UCSC standard
 chromosome sequence. Default: hg38.}
+
+\item{customDNA}{A character vector containing a custom DNA sequence. If
+provided, this sequence will be used instead of the predefined options
+specified by the `genome` parameter. Default is NULL.}
 
 \item{ncores}{number of cores to use for tabulating potential
 variants (defaults to 2)}

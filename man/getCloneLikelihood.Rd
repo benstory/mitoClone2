@@ -33,16 +33,16 @@ with clones
 }
 \section{Functions}{
 \itemize{
-\item \code{getMainClone}: Retrieve the most likely clone
+\item \code{getMainClone()}: Retrieve the most likely clone
 associate with each cell.
 
-\item \code{getConfidence}: Retrieve the likelihood of the most
+\item \code{getConfidence()}: Retrieve the likelihood of the most
 likely clone for each cell.
 
-\item \code{getMut2Clone}: Retrieve the assignment of mutations
+\item \code{getMut2Clone()}: Retrieve the assignment of mutations
 to clones, once \code{\link{clusterMetaclones}} has been run.
-}}
 
+}}
 \examples{
 load(system.file("extdata/LudwigFig7.Rda",package =
 "mitoClone2"))
