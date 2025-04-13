@@ -19,7 +19,7 @@ Suggests: knitr, rmarkdown, Biostrings, testthat
 RoxygenNote: 7.1.0
 SystemRequirements: GNU make, PhISCS (optional)
 Packaged: 2021-06-20 21:50:22 UTC; story
-Depends: R (>= 4.1.0)
+Depends: R (>= 4.4.0)
 NeedsCompilation: yes
 URL: https://github.com/benstory/mitoClone2
 Bugreports: https://github.com/benstory/mitoClone2/issues
