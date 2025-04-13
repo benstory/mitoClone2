@@ -17,7 +17,8 @@ bam2R_10x(
   keepflag = 0,
   max.mismatches = NULL,
   ncores = 1,
-  ignore_nonstandard = FALSE
+  ignore_nonstandard = FALSE,
+  min_reads_per_barcode = 50
 )
 }
 \arguments{
@@ -62,6 +63,9 @@ alignments, insertions, or deletions should be included in the
 final output. Default FALSE. If you have an inflation of
 spliced mitochondrial reads it is recommended to set this to
 TRUE.}
+
+\item{min_reads_per_barcode}{Int defining how many reads a barcode
+must for it to be considered in the pileup tabulations. Default 50}
 }
 \value{
 A named \code{\link{list}} of \code{\link{matrix}} with
