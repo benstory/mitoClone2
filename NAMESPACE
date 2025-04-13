@@ -15,3 +15,4 @@ importFrom("methods", "new", "slot")
 importFrom("deepSNV", "bam2R")
 import(ggplot2)
 useDynLib(mitoClone2)
+

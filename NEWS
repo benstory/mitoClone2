@@ -2,12 +2,10 @@
 \item
 Added function to pre-filter unused cell barcodes by default to decrease RAM usage
 }}
-
 \section{Version 0.99.8}{\itemize{
 \item
 Final push for Windows C++ compile and small fixes throughout 
 }}
-
 \section{Version 0.99.2}{\itemize{
 \item
 Attempted fix for Windows C++ compile
