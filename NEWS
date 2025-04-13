@@ -1,3 +1,8 @@
+\section{Version 1.11.3}{\itemize{
+\item
+Added function to pre-filter unused cell barcodes by default to decrease RAM usage
+}}
+
 \section{Version 0.99.8}{\itemize{
 \item
 Final push for Windows C++ compile and small fixes throughout 
