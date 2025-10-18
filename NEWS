@@ -1,3 +1,7 @@
+\section{Version 1.15.3}{\itemize{
+\item
+Added vireo implementation
+}}
 \section{Version 1.11.3}{\itemize{
 \item
 Added function to pre-filter unused cell barcodes by default to decrease RAM usage
@@ -6,6 +10,7 @@ Added function to pre-filter unused cell barcodes by default to decrease RAM usa
 \item
 Final push for Windows C++ compile and small fixes throughout 
 }}
+
 \section{Version 0.99.2}{\itemize{
 \item
 Attempted fix for Windows C++ compile
