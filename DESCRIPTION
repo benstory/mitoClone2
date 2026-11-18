@@ -21,4 +21,4 @@ SystemRequirements: GNU make, PhISCS (optional)
 Depends: R (>= 4.4.0)
 NeedsCompilation: yes
 URL: https://github.com/benstory/mitoClone2
-Bugreports: https://github.com/benstory/mitoClone2/issues
+BugReports: https://github.com/benstory/mitoClone2/issues

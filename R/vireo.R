@@ -162,6 +162,10 @@ updateGTprob <- function(model, ad, dp) {
 #' @param beta.sum.init Initial beta sum values
 #' @param id.prob.init Initial ID probabilities
 #' @param gt.prob.init Initial genotype probabilities
+#' @return A list with the model dimensions and settings (n.cell, n.var,
+#'n.donor, n.gt, learn.gt, fix.beta.sum), the initial parameters
+#'(beta.mu, beta.sum, id.prob, gt.prob), the priors (theta.s1.prior,
+#'theta.s2.prior, id.prior, gt.prior) and an empty elbo trace.
 vireo <- function(n.cell, n.var, n.donor, n.gt = 3, learn.gt = TRUE,
                   fix.beta.sum = FALSE, beta.mu.init = NULL, beta.sum.init = NULL,
                   id.prob.init = NULL, gt.prob.init = NULL) {

@@ -38,6 +38,12 @@ vireo(
 
 \item{gt.prob.init}{Initial genotype probabilities}
 }
+\value{
+A list with the model dimensions and settings (n.cell, n.var,
+n.donor, n.gt, learn.gt, fix.beta.sum), the initial parameters
+(beta.mu, beta.sum, id.prob, gt.prob), the priors (theta.s1.prior,
+theta.s2.prior, id.prior, gt.prior) and an empty elbo trace.
+}
 \description{
 Initialize Vireo model
 }
