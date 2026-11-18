@@ -1,3 +1,9 @@
+\section{Version 1.19.1}{\itemize{
+\item
+Fixed mitoPlot() with recent GenomicRanges versions
+\item
+Removed sprintf from the compiled code
+}}
 \section{Version 1.15.3}{\itemize{
 \item
 Added vireo implementation

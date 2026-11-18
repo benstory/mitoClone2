@@ -546,6 +546,9 @@ clusterMetaclones <- function(mutcalls,
 }
 
 
+## column used inside ggplot2::aes() in mitoPlot
+utils::globalVariables("gene")
+
 #'Plot clone-specific variants in circular plots
 #'
 #'@param variants Character vector of variants to plot in format
@@ -587,6 +590,11 @@ mitoPlot <- function(variants,
                         "mm10" = mm10.mito)
     }
     mito.gr <- mito.gr[mito.gr$gene_biotype != 'Mt_tRNA']
+    ## recent GenomicRanges versions turn the names of a GRanges into a
+    ## 'names' column when converting to a data.frame, the variants have
+    ## no names, so drop them to keep the columns of both tables identical
+    names(mito.gr) <- NULL
+    names(mito.var) <- NULL
     S4Vectors::mcols(mito.gr) <-
         S4Vectors::mcols(mito.gr)[, c('external_gene_name'), drop = FALSE]
     mito.genes.df <-

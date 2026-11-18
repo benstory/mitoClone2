@@ -13,6 +13,7 @@
   
 #include <iostream>
 #include <vector>
+#include <string>
 #include <stdio.h>
 #include <string.h>
 #include "htslib/sam.h"
@@ -82,9 +83,9 @@
       }
       
       //int tid = bam_name2id(head, ref);
-      char *region = (char*) malloc(sizeof(ref) + sizeof(":") + sizeof("-") + (sizeof(char)*50));
-      sprintf(region, "%s:%d-%d", ref, beg, end);
-      hts_itr_t *iter = sam_itr_querys(idx, head, region);
+      // std::string instead of sprintf: no fixed size buffer (R CMD check warns about sprintf)
+      std::string region = std::string(ref) + ":" + std::to_string(beg) + "-" + std::to_string(end);
+      hts_itr_t *iter = sam_itr_querys(idx, head, region.c_str());
       
       int result;
       while ((result = sam_itr_next(in, iter, b)) >= 0) {
@@ -98,12 +99,11 @@
           }
         }
       }
-      
-      free(region);
+
       sam_itr_destroy(iter);
       hts_idx_destroy(idx);
     }
-    
+
     // Filter map to only keep barcodes with sufficient counts
     std::map<std::string, int> valid_barcodes;
     int barcodes_over_threshold = 0;
@@ -325,14 +325,13 @@
           Rf_error("Invalid sequence %s\n", ref);
           return Rf_ScalarLogical(FALSE);//return 1;
         }
-        char *region = NULL;
-        region = (char*) malloc(sizeof(ref)+sizeof(":")+sizeof("-")+(sizeof(char)*50));      
-        sprintf(region,"%s:%d-%d",ref,nttable.beg,nttable.end);
+        // std::string instead of sprintf: no fixed size buffer (R CMD check warns about sprintf)
+        std::string region = std::string(ref) + ":" + std::to_string(nttable.beg) + "-" + std::to_string(nttable.end);
         if(*verbose){
-          Rprintf("Reading %s at coordinates %s.\n", bamfile, region);
+          Rprintf("Reading %s at coordinates %s.\n", bamfile, region.c_str());
         }
         //Implement a fetch style iterator
-        hts_itr_t *iter = sam_itr_querys(idx, head, region);
+        hts_itr_t *iter = sam_itr_querys(idx, head, region.c_str());
         int result;
         while ((result = sam_itr_next(nttable.in, iter, b)) >= 0) {
           if ((b->core.flag & *mask)==0 && b->core.qual >= *mq && (b->core.flag & *keepflag)==*keepflag && ((paux && bam_aux2i(bam_aux_get(b,"NM")) <= *maxmismatches ) || !paux || *maxmismatches == -1)){
@@ -346,11 +345,10 @@
           Rf_error("Error code (%d) encountered reading sam iterator.\n", result);
           return Rf_ScalarLogical(FALSE);//return 1;
         }
-        free(region);
         sam_itr_destroy(iter);
         hts_idx_destroy(idx);
       }
-      
+
       bam_plp_push(buf,0); // finalize pileup
       
       while ( (pl=bam_plp_next(buf, &tid, &pos, &n_plp)) != 0) {
