@@ -8,7 +8,9 @@ pullcountsVars(BaseCounts, vars, cells = NULL)
 }
 \arguments{
 \item{BaseCounts}{A list of base call matrices (one matrix per cell)
-as produced by \code{\link{baseCountsFromBamList}}}
+as produced by \code{\link{baseCountsFromBamList}}. Alternatively
+the sparse counts produced by \code{\link{bam2R_v2}}, see
+\code{\link{pullcountsVars10x}}.}
 
 \item{vars}{Character vector of variants to pull, in format 5643G>T}
 

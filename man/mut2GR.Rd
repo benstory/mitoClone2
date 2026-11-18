@@ -8,7 +8,9 @@ mut2GR(mut)
 }
 \arguments{
 \item{mut}{The mutation to convert to a GRanges in the format of
-"position reference>alternate".}
+"position reference>alternate". The chromosome may be given in
+front, e.g. "chr7:140753336 A>T", variants without a chromosome
+are located on chrM.}
 }
 \value{
 Returns a GRanges object containg the site of the variant
@@ -20,4 +22,5 @@ Convert mutation string to GRanges
 \examples{
 mutation.as.granges <- mut2GR('1434 G>A')
 mutation.as.granges.no.space <- mut2GR('1434G>A')
+mutation.on.chr7 <- mut2GR('chr7:140753336 A>T')
 }

@@ -23,7 +23,9 @@ mutationCallsFromExclusionlist(
 }
 \arguments{
 \item{BaseCounts}{A list of base call matrices (one matrix per cell)
-as produced by \code{\link{baseCountsFromBamList}}}
+as produced by \code{\link{baseCountsFromBamList}} or
+\code{\link{bam2R_10x}}. Alternatively the sparse counts
+produced by \code{\link{bam2R_v2}}.}
 
 \item{lim.cov}{Minimal coverage required per cell for a cell to be
 classified as covered}

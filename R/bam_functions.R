@@ -61,13 +61,13 @@ baseCountsFromBamList <- function(bamfiles,
 #' @param sites The chromosome locations of interest in BED format as
 #'a string. Alternatively a single GRanges object will also work.
 #' @param q An optional cutoff for the nucleotide Phred
-#'quality. Default q = 25. Nucleotides with Q < q will be masked
-#'by 'N'.
+#'quality. Default q = 25. Nucleotides with Q <= q will be masked
+#'by 'N' (only nucleotides with Q > q are counted).
 #' @param mq An optional cutoff for the read mapping quality. Default
 #'mq = 0 (no filter). reads with MQ < mq will be discarded.
 #' @param s Optional choice of the strand. Defaults to s = 2 (both).
-#' @param head.clip Should n nucleotides from the head of reads be
-#'clipped? Default 0.
+#' @param head.clip Number of nucleotides at the head (5' end) of
+#'each read that are masked by 'N'. Default 0.
 #' @param max.depth The maximal depth for the pileup command. Default
 #'1,000,000.
 #' @param verbose Boolean. Set to TRUE if you want to get additional

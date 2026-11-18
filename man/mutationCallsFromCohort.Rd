@@ -17,17 +17,21 @@ mutationCallsFromCohort(
   MINFRAC.OTHER = 0.1,
   USE.REFERENCE = TRUE,
   genome = "hg38",
-  customGenome = NULL
+  customGenome = NULL,
+  all.chromosomes = FALSE,
+  reference = NULL
 )
 }
 \arguments{
 \item{BaseCounts}{A list of base call matrices (one matrix per cell)
 as produced by \code{\link{baseCountsFromBamList}} or
-\code{\link{bam2R_10x}}.}
+\code{\link{bam2R_10x}}. Alternatively the sparse counts
+produced by \code{\link{bam2R_v2}}.}
 
 \item{sites}{Vector specifying genomic regions, defaults to the
 entire mitochondrial genome. Excepts a string but may be
-included as a GRanges object.}
+included as a GRanges object. Not needed for the sparse counts
+of \code{\link{bam2R_v2}}.}
 
 \item{patient}{A character vector associating each cell / entry in
 the \code{BaseCount} list with a patient}
@@ -64,6 +68,25 @@ chromosome sequence. Default: hg38.}
 \item{customGenome}{A GRanges object containing a custom annotation. If
 provided, this genome will be used instead of the predefined options
 specified by the `genome` parameter. Default is NULL.}
+
+\item{all.chromosomes}{Boolean, only for the sparse counts of
+\code{\link{bam2R_v2}}. FALSE (default): variants are called on
+the mitochondrial chromosome only. TRUE: variants are called on
+every site of the counts, on any chromosome. Variants outside of
+the mitochondrial chromosome are named with their chromosome,
+e.g. chr7:140753336A>T. The thresholds are the same for all
+sites, please note that the defaults were chosen for the high
+coverage of the mitochondrial genome.}
+
+\item{reference}{Only used if \code{all.chromosomes = TRUE}. The
+genome that the BAM file was aligned to, either the path of a
+FASTA file (an index is created if there is none) or a BSgenome
+object. The sequence names have to be identical to the BAM file.
+Default NULL: the mitochondrial sites use the \code{genome}
+annotation and for all other sites the most abundant nucleotide
+is used as reference allele (with a warning: homozygous
+variants can not be detected that way and REF/ALT are swapped
+where the variant is the majority).}
 }
 \value{
 A list of \code{\link{mutationCalls}} objects (one for each

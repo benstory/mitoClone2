@@ -1,0 +1,451 @@
+---
+title: "Sparse counts for large 10x datasets: reading, calling and plotting"
+author: "Benjamin Story"
+output: rmarkdown::html_document
+vignette: >
+  %\VignetteIndexEntry{Sparse counts for large 10x datasets}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, fig.align = "center",
+                      dev = "png", dpi = 110)
+```
+
+## Overview
+
+`bam2R_10x` returns one dense matrix per cell. That is convenient for a few
+hundred cells, but a 10x Genomics experiment with thousands of cells needs
+gigabytes of memory that way. `bam2R_v2` reads the same BAM file into
+**sparse** matrices (sites x cells) and only stores what was actually
+observed. In addition it
+
+*   reads any number of regions on any chromosome in a single pass,
+*   reports the forward and the reverse strand separately,
+*   can count UMIs instead of reads (`umi.tag`),
+*   can be restricted to the cells of interest (`barcodes`).
+
+The result can be passed directly to `mutationCallsFromCohort`,
+`mutationCallsFromExclusionlist` and `pullcountsVars`. This vignette walks
+through that workflow and shows how to plot the results:
+
+1.  read the counts,
+2.  check the coverage,
+3.  call patient specific variants with the cohort method, on the
+    mitochondrial genome and on a nuclear target,
+4.  check the variants for strand bias,
+5.  look at the clones of a single patient.
+
+```{r packages}
+library(mitoClone2)
+library(Matrix)
+library(reshape2)
+library(ggplot2)
+library(viridis)
+library(ComplexHeatmap)
+```
+
+## Reading the counts
+
+The example BAM file of the package contains five cells of a mouse 10x
+Genomics experiment.
+
+```{r read}
+bam <- system.file("extdata", "mm10_10x.bam", package = "mitoClone2")
+example <- bam2R_v2(file = bam, sites = "chrM:1-15000")
+#-- 16 matrices: 8 for the forward strand (capital letters), 8 for the reverse
+names(example)
+#-- covered sites x cells
+dim(example$A)
+example$A[c("chrM:13575", "chrM:13576", "chrM:13577"), ]
+```
+
+For a real experiment you would typically provide the barcodes of the cells
+that passed the quality control, count UMIs instead of reads to remove PCR
+duplicates and use several cores. The sites can be any set of regions:
+
+```{r read_real, eval=FALSE}
+#-- NOT RUN: a complete 10x Genomics experiment
+barcodes <- read.table("filtered_feature_bc_matrix/barcodes.tsv.gz")$V1
+counts <- bam2R_v2(file = "possorted_genome_bam.bam",
+                   sites = c("chrM:1-16569", "chr7:140753000-140754000"),
+                   barcodes = barcodes, umi.tag = "UB", ncores = 4)
+```
+
+For experiments with **one BAM file per cell** (e.g. Smart-seq2),
+`baseCountsFromBamList_v2` returns the same sparse format, with one column
+per file. Everything below works the same way for its output.
+
+```{r read_bamlist, eval=FALSE}
+#-- NOT RUN: one BAM file per cell, the names become the cell names
+bamfiles <- c(cell1 = "cell1.bam", cell2 = "cell2.bam")
+counts <- baseCountsFromBamList_v2(bamfiles, sites = "chrM:1-16569", ncores = 4)
+```
+
+## A larger example
+
+Five cells are not enough to illustrate variant calling. For the remainder
+of this vignette we therefore use **simulated** counts in exactly the format
+that `bam2R_v2` returns: 360 cells from three patients, covering the human
+mitochondrial genome and a 300 bp target on a toy chromosome 7. The
+simulation plants
+
+*   homoplasmic variants that are private to each patient,
+*   heteroplasmic variants that mark clones and subclones within a patient,
+*   a somatic and a germline heterozygous variant on chromosome 7,
+*   variants that are shared by all cells of all patients (e.g. RNA editing),
+*   an artifact that is only seen on one strand.
+
+The code of the simulation is part of the source of this vignette.
+
+```{r simulate, echo=FALSE}
+simulateCounts <- function(n.cells = 120, seed = 42) {
+    set.seed(seed)
+    nts <- c("A", "T", "C", "G")
+    ## reference: the human mitochondrial genome and a made up 300 bp target on chr7
+    mito.ref <- getFromNamespace("hg38.dna", "mitoClone2")
+    chr7.ref <- sample(nts, 6000, replace = TRUE)
+    site <- data.frame(chr = rep(c("chrM", "chr7"), c(length(mito.ref), 300)),
+                       pos = c(seq_along(mito.ref), 5001:5300),
+                       stringsAsFactors = FALSE)
+    site$ref <- c(mito.ref, chr7.ref[5001:5300])
+    site <- site[site$ref != "N", ]
+    n.sites <- nrow(site)
+    patient <- rep(c("P1", "P2", "P3"), each = n.cells)
+    cells <- paste0(patient, "_", vapply(seq_along(patient), function(i)
+        paste(sample(nts, 12, replace = TRUE), collapse = ""), ""), "-1")
+    ## coverage: a smooth profile along the genome x the sequencing depth of the cell
+    profile <- ifelse(site$chr == "chrM",
+                      pmax(30 + 16 * sin(site$pos / 900) + 10 * cos(site$pos / 210), 8), 16)
+    depth <- matrix(rpois(n.sites * length(cells),
+                          outer(profile, rlnorm(length(cells), 0, 0.3))), n.sites)
+    fwd <- matrix(rbinom(length(depth), depth, rbeta(n.sites, 8, 8)), n.sites)
+    rev <- depth - fwd
+    ## the variants: who carries them and at which heteroplasmy
+    group <- function(pt, from, to) which(patient == pt)[round(from * n.cells + 1):round(to * n.cells)]
+    mito <- function(n) sample(which(site$chr == "chrM" & site$pos > 600 & site$pos < 16000), n)
+    chr7 <- function(pos) which(site$chr == "chr7" & site$pos == pos)
+    het <- function(a, b) function(n) rbeta(n, a, b)
+    variants <- list(
+        ## homoplasmic variants that are private to a patient
+        list(mito(3), group("P1", 0, 1), het(80, 1)), list(mito(3), group("P2", 0, 1), het(80, 1)),
+        list(mito(3), group("P3", 0, 1), het(80, 1)),
+        ## clones: P1 has clone A with a subclone and clone B
+        list(mito(2), group("P1", 0, .55), het(9, 5)), list(mito(1), group("P1", 0, .25), het(6, 6)),
+        list(mito(2), group("P1", .65, .9), het(5, 6)), list(chr7(5120), group("P1", 0, .55), het(60, 60)),
+        ## P2 has one clone, P3 two clones (one with a subclone)
+        list(mito(2), group("P2", .3, .75), het(7, 5)),
+        list(mito(2), group("P3", 0, .4), het(8, 6)), list(mito(2), group("P3", .5, .85), het(6, 5)),
+        list(mito(1), group("P3", .5, .7), het(5, 7)), list(chr7(5210), group("P3", 0, 1), het(60, 60)),
+        ## present in every cell of every patient (e.g. RNA editing, common haplogroup)
+        list(mito(5), seq_along(cells), het(3, 9)), list(mito(2), seq_along(cells), het(80, 1)),
+        ## an artifact that only shows up on the forward strand
+        list(mito(2), group("P2", 0, 1), het(4, 9), "forward"))
+    alt.fwd <- alt.rev <- list()
+    for (v in variants) for (s in v[[1]]) {
+        af <- v[[3]](length(v[[2]]))
+        ## transitions (A<>G, C<>T) are the most common mitochondrial variants
+        alt <- c(A = "G", G = "A", C = "T", T = "C")[[site$ref[s]]]
+        a.f <- rbinom(length(af), fwd[s, v[[2]]], af)
+        a.r <- if (length(v) == 4) 0L else rbinom(length(af), rev[s, v[[2]]], af)
+        fwd[s, v[[2]]] <- fwd[s, v[[2]]] - a.f
+        rev[s, v[[2]]] <- rev[s, v[[2]]] - a.r
+        alt.fwd[[length(alt.fwd) + 1]] <- data.frame(i = s, j = v[[2]], nt = alt, x = a.f)
+        alt.rev[[length(alt.rev) + 1]] <- data.frame(i = s, j = v[[2]], nt = alt, x = a.r)
+    }
+    ## sequencing errors: 0.2 % of the reads show a random other nucleotide
+    errors <- function(m) {
+        e <- which(m > 0 & runif(length(m)) < 1 - (1 - 0.002)^m)
+        data.frame(i = row(m)[e], j = col(m)[e], x = 1,
+                   nt = nts[(match(site$ref[row(m)[e]], nts) + sample(3, length(e), TRUE) - 1) %% 4 + 1])
+    }
+    ## assemble the 16 sparse matrices in the format of bam2R_v2
+    assemble <- function(m, alt) {
+        alt <- rbind(do.call(rbind, alt), errors(m))
+        alt <- alt[alt$x > 0, ]
+        out <- lapply(nts, function(nt) {
+            is.ref <- which(site$ref == nt)
+            r <- which(m[is.ref, , drop = FALSE] > 0, arr.ind = TRUE)
+            a <- alt[alt$nt == nt, ]
+            Matrix::sparseMatrix(i = c(is.ref[r[, 1]], a$i), j = c(r[, 2], a$j),
+                                 x = as.numeric(c(m[is.ref, , drop = FALSE][r], a$x)),
+                                 dims = dim(m))
+        })
+        c(out, replicate(4, Matrix::sparseMatrix(i = integer(0), j = integer(0), x = numeric(0),
+                                                 dims = dim(m))))
+    }
+    counts <- c(assemble(fwd, alt.fwd), assemble(rev, alt.rev))
+    names(counts) <- c("A", "T", "C", "G", "-", "N", "INS", "DEL",
+                       "a", "t", "c", "g", "_", "n", "ins", "del")
+    counts <- lapply(counts, function(m) {
+        dimnames(m) <- list(paste0(site$chr, ":", site$pos), cells)
+        m
+    })
+    ## the toy genome as a FASTA file
+    fasta <- file.path(tempdir(), "toy_genome.fa")
+    writeLines(c(">chr7", paste(chr7.ref, collapse = "")), fasta)
+    list(counts = counts, patient = patient, fasta = fasta)
+}
+```
+
+```{r data}
+sim <- simulateCounts()
+counts <- sim$counts
+patient <- sim$patient
+#-- sites x cells
+dim(counts$A)
+table(patient)
+```
+
+Colors for the patients, used in all plots below.
+
+```{r colors}
+pts.colors <- c(P1 = "#FF7F00", P2 = "dodgerblue2", P3 = "#6A3D9A")
+```
+
+## Coverage
+
+Every count matrix has one row per site, so the coverage along the genome is
+a matter of summing the four nucleotides of both strands.
+
+```{r coverage, fig.width=8, fig.height=3.2}
+#-- reads per site and cell, both strands
+depth <- Reduce("+", counts[c("A", "T", "C", "G", "a", "t", "c", "g")])
+depth <- depth[grep("^chrM:", rownames(depth)), ]
+#-- mean coverage per patient
+cov.df <- melt(sapply(split(seq_along(patient), patient), function(cells) {
+    Matrix::rowMeans(depth[, cells])
+}))
+colnames(cov.df) <- c("site", "Patient", "coverage")
+cov.df$pos <- as.integer(gsub(".*:", "", cov.df$site))
+
+ggplot(cov.df, aes(x = pos, y = coverage, color = Patient)) +
+    geom_line(linewidth = 0.4) + theme_classic(base_size = 14) +
+    scale_colour_manual(values = pts.colors) +
+    geom_hline(yintercept = 5, color = "grey", linetype = "dashed") +
+    xlab("Position on chrM") + ylab("Mean reads\nper cell")
+```
+
+## Calling variants across patients
+
+The cohort method compares the patients with each other: a variant that is
+found in the cells of a single patient is kept, a variant that is found in
+several patients ends up on the exclusionlist. The sparse counts are passed
+directly, the `sites` do not have to be specified.
+
+By default only the mitochondrial chromosome is used. With
+`all.chromosomes = TRUE` variants are called on every site of the counts.
+The reference alleles of the other chromosomes are taken from the genome the
+BAM file was aligned to, provided either as a FASTA file or as a BSgenome
+object (e.g. `BSgenome.Hsapiens.UCSC.hg38::Hsapiens`). Here it is the FASTA
+file of our toy genome. Without a reference the most abundant nucleotide of
+a site is used as the reference allele, which is accompanied by a warning,
+because homozygous variants can not be detected that way.
+
+```{r cohort}
+calls <- mutationCallsFromCohort(counts, patient = patient,
+                                 all.chromosomes = TRUE, reference = sim$fasta)
+#-- variants shared between patients
+vars.exclusions <- calls[["exclusionlist"]]
+vars.exclusions
+calls[["exclusionlist"]] <- NULL
+#-- one mutationCalls object per patient: cells x variants
+sapply(calls, function(x) dim(x@M))
+```
+
+The names of the variants were made syntactically valid by R. A small helper
+converts them back: `X1337G.A` (or `X1337.G.A`) to `1337G>A` and
+`chr7.5120C.T` to `chr7:5120C>T`.
+
+```{r helper}
+fixvarName <- function(x) {
+    x <- sub("^X(?=[0-9])", "", x, perl = TRUE)
+    x <- sub("\\.?([ACGT])\\.([ACGT])$", "\\1>\\2", x)
+    sub("^(.+)\\.([0-9]+[ACGT]>[ACGT])$", "\\1:\\2", x)
+}
+candidates <- lapply(calls, function(x) fixvarName(names(x@cluster)))
+candidates
+```
+
+## Allele frequencies of the patient specific variants
+
+`pullcountsVars` extracts the counts of the variant allele (M) and of all
+other alleles (N) of any variant, in all cells.
+
+```{r pull}
+vars <- unlist(candidates, use.names = FALSE)
+vars.patient <- rep(names(candidates), lengths(candidates))
+MN <- pullcountsVars(counts, vars)
+plotData <- MN$M / (MN$M + MN$N)
+dim(plotData)
+```
+
+```{r heatmap, fig.width=8.5, fig.height=6}
+#-- annotation of the cells (columns) and of the variants (rows)
+ha_column <- HeatmapAnnotation(Patient = patient, col = list(Patient = pts.colors),
+                               show_annotation_name = FALSE)
+ha_row <- rowAnnotation(
+    Chromosome = ifelse(grepl(":", vars), "chr7", "chrM"),
+    col = list(Chromosome = c(chrM = "grey75", chr7 = "black")),
+    show_annotation_name = FALSE)
+Heatmap(plotData, col = viridis(100, option = "plasma"), na_col = "grey90",
+        top_annotation = ha_column, left_annotation = ha_row,
+        column_split = patient, row_split = vars.patient,
+        cluster_row_slices = FALSE, cluster_column_slices = FALSE,
+        show_column_names = FALSE, show_column_dend = FALSE, show_row_dend = FALSE,
+        row_title = NULL, column_title_gp = gpar(fontsize = 18),
+        row_names_gp = gpar(fontsize = 8), name = "Allele\nfreq.",
+        use_raster = TRUE)
+```
+
+Each patient has a set of variants that is present in all of its cells and
+further variants that are restricted to a part of the cells: the clones. The
+two variants on chromosome 7 behave like the mitochondrial ones, at an allele
+frequency around 0.5 as expected for heterozygous variants.
+
+## Strand bias
+
+True variants are seen on both strands. `strandBias10x` tabulates the reads of
+the reference and alternate allele per strand and tests whether they are
+distributed differently.
+
+```{r strand}
+strand <- strandBias10x(counts, vars)
+#-- reads per allele and strand, strand odds ratio and the flag
+show <- c("ref.fwd", "ref.rev", "alt.fwd", "alt.rev", "sor", "strand.flag")
+head(strand[, show], 4)
+strand[strand$strand.flag, show]
+```
+
+```{r strand_plot, fig.width=6.5, fig.height=4.6}
+#-- allele frequency on each strand, in the cells of the patient with the variant
+strand.df <- do.call(rbind, lapply(names(candidates), function(pt) {
+    sb <- strandBias10x(counts, candidates[[pt]], cells = colnames(counts$A)[patient == pt])
+    data.frame(var = rownames(sb), Patient = pt, flag = sb$strand.flag,
+               Forward = sb$alt.fwd / (sb$alt.fwd + sb$ref.fwd),
+               Reverse = sb$alt.rev / (sb$alt.rev + sb$ref.rev))
+}))
+cor_strand <- cor.test(strand.df$Forward[!strand.df$flag], strand.df$Reverse[!strand.df$flag])
+
+ggplot(strand.df, aes(x = Forward, y = Reverse, color = Patient)) +
+    geom_abline(slope = 1, color = "grey", linetype = "dashed") +
+    geom_point(size = 4, alpha = 0.85) +
+    geom_point(data = subset(strand.df, flag), shape = 21, size = 8,
+               color = "red", stroke = 1) +
+    annotate("text", x = 0.36, y = 0.08, hjust = 0, color = "red", size = 3.5,
+             label = paste(c("forward strand only:", strand.df$var[strand.df$flag]),
+                           collapse = "\n")) +
+    annotate("text", x = 0.22, y = 0.92,
+             label = sprintf("r = %.3f", cor_strand$estimate)) +
+    theme_classic(base_size = 14) + scale_colour_manual(values = pts.colors) +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1)) +
+    xlab("Forward strand\nAllele frequency") + ylab("Reverse strand\nAllele frequency")
+```
+
+The allele frequencies of the two strands agree, except for the two flagged
+variants (red circles) that are only supported by the forward strand. They
+are the planted artifacts and are removed.
+
+```{r strand_filter}
+keep <- !strand$strand.flag
+vars <- vars[keep]
+vars.patient <- vars.patient[keep]
+plotData <- plotData[keep, ]
+candidates <- split(vars, vars.patient)
+```
+
+## Do the variants separate the patients?
+
+The distance between the cells, based on the allele frequencies of the
+remaining variants.
+
+```{r distance, fig.width=6.5, fig.height=5.2}
+#-- cells without coverage of a variant are ignored for that variant
+distmat <- as.matrix(dist(t(plotData)))
+ha_column <- HeatmapAnnotation(Patient = patient, col = list(Patient = pts.colors))
+Heatmap(distmat, col = viridis(100), show_row_names = FALSE, show_column_names = FALSE,
+        top_annotation = ha_column, show_column_dend = FALSE, show_row_dend = FALSE,
+        name = "Euclidean\ndistance", use_raster = TRUE)
+```
+
+## The clones of a single patient
+
+Zooming in on patient P1: next to the variants that all of its cells share
+there are variants that are only found in a part of the cells.
+
+```{r clones, fig.width=8, fig.height=3.6}
+p1 <- plotData[candidates[["P1"]], patient == "P1"]
+#-- group the cells by their variants
+clone <- cutree(hclust(dist(t(p1 > 0.1), method = "binary"), method = "average"), k = 4)
+clone.colors <- structure(c("#1B9E77", "#E7298A", "#E6AB02", "grey60"),
+                          names = as.character(1:4))
+ha_column <- HeatmapAnnotation(Clone = as.character(clone), col = list(Clone = clone.colors))
+Heatmap(p1, col = viridis(100, option = "plasma"), na_col = "grey90",
+        top_annotation = ha_column, column_split = clone,
+        show_column_names = FALSE, show_column_dend = FALSE, show_row_dend = FALSE,
+        column_title = NULL, row_names_gp = gpar(fontsize = 10),
+        name = "Allele\nfreq.", use_raster = TRUE)
+```
+
+The mean allele frequency of every variant per clone summarizes the
+structure: a variant close to 1 everywhere is a germline or early variant, a
+variant restricted to some clones occurred later.
+
+```{r clones_dot, fig.width=6.2, fig.height=3.6}
+clone.df <- melt(sapply(split(seq_along(clone), clone), function(cells) {
+    rowMeans(p1[, cells, drop = FALSE], na.rm = TRUE)
+}))
+colnames(clone.df) <- c("var", "Clone", "af")
+clone.df$cells <- as.vector(table(clone)[as.character(clone.df$Clone)])
+ggplot(clone.df, aes(x = factor(Clone), y = var, color = af, size = cells)) +
+    geom_point() + theme_classic(base_size = 14) +
+    scale_color_viridis(option = "plasma", limits = c(0, 1), name = "Allele\nfreq.") +
+    scale_size(range = c(3, 9), name = "Cells") +
+    xlab("Clone") + ylab(NULL)
+```
+
+The location of the mitochondrial variants of the patient on the circular
+genome is shown by `mitoPlot`. It expects the variants in the format
+`1337 G>A`.
+
+```{r mitoplot, fig.width=7, fig.height=7}
+p1.mito <- grep(":", candidates[["P1"]], invert = TRUE, value = TRUE)
+mitoPlot(sub("([ACGT]>[ACGT])$", " \\1", p1.mito))
+```
+
+The `mutationCalls` object of the patient can be passed on to `varCluster`
+to infer a clonal hierarchy, as described in the *clustering* vignette.
+
+## A single sample: the exclusionlist method
+
+If there is only one sample, there is nothing to compare it to. In that case
+`mutationCallsFromExclusionlist` removes variants on predefined
+exclusionlists (RNA editing sites, homopolymers and recurrent artifacts). It
+accepts the sparse counts as well and uses their mitochondrial chromosome.
+Here we apply it to the cells of patient P1.
+
+```{r exclusionlist}
+counts.p1 <- lapply(counts, function(x) x[, patient == "P1"])
+calls.p1 <- mutationCallsFromExclusionlist(counts.p1, min.af = 0.1, min.num.samples = 10)
+from.exclusionlist <- fixvarName(names(calls.p1@cluster))
+#-- variants of the cohort method that are found again
+table(found = p1.mito %in% from.exclusionlist)
+#-- variants that are only reported by the exclusionlist method
+setdiff(from.exclusionlist, p1.mito)
+```
+
+Two differences are worth noting. The variants that are present in all cells
+of the patient are missing: within a single sample they look like germline
+variants and are removed (`universal.var.cells`), which is fine because they
+do not distinguish any clones. The variants that are reported in addition are
+the ones that are shared by all patients. Without the other patients they can
+not be recognized as such, unless they are located on one of the
+exclusionlists. We therefore recommend the cohort method whenever several
+samples are available.
+
+## Session information
+
+```{r session}
+sessionInfo()
+```

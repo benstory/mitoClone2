@@ -4,6 +4,7 @@ export("varCluster","quick_cluster","clusterMetaclones","overwriteMetaclones","p
 export("getAlleleCount","setVarsCandidate","getVarsCandidate","getMut2Clone")
 export("exclusionlists")
 export("bam2R_10x")
+export("bam2R_v2","bam2R_10x_v2","pullcountsVars10x","strandBias10x","baseCountsFromBamList_v2")
 export("vireoFit","predictCellAssignment")
 import(Rhtslib)
 importFrom("grDevices", "colorRampPalette")

@@ -177,6 +177,33 @@ print(head(baseCounts[[1]][13267:13277,]))
 
 ```
 
+For datasets with many cells we recommend `bam2R_v2`. It reads the same
+kind of BAM file but only stores the site/cell combinations that were
+actually observed (sparse matrices, sites x cells) instead of one matrix
+per cell, reads any number of regions in a single pass and reports both
+strands separately. If your BAM file contains UMIs you can count UMIs
+instead of reads with `umi.tag = "UB"`, and with `barcodes` you can
+restrict the counting to the cells you are interested in (e.g. the
+filtered barcodes from Cell Ranger). The result can be passed to all the
+variant calling functions described below in place of the `baseCounts`
+list.
+
+
+```{r baseCounts_10x_BAM_v2}   
+## sparse counts: a list of 16 matrices (8 per strand), sites x cells
+sparseCounts <- bam2R_v2(file = system.file("extdata", "mm10_10x.bam",
+package="mitoClone2"), sites="chrM:1-15000")
+print(dim(sparseCounts$A))   
+
+## the variant calling functions accept them directly
+## (thresholds adjusted to this toy example of 5 cells)
+sparseCalls <- mutationCallsFromExclusionlist(sparseCounts, lim.cov = 5,
+min.af = 0.1, min.num.samples = 1, universal.var.cells = 5,
+max.var.na = 1, max.cell.na = 1.1, genome = 'mm10')
+print(colnames(getAlleleCount(sparseCalls, 'mutant')))   
+
+```
+
 
 ## Calling and filtering variants   
 The next step of the analysis is to take your counts of each nucleotide in

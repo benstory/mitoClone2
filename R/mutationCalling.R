@@ -13,12 +13,14 @@
 #' individuals using \code{\link{mutationCallsFromExclusionlist}}
 #'@param BaseCounts A list of base call matrices (one matrix per cell)
 #'as produced by \code{\link{baseCountsFromBamList}} or
-#'\code{\link{bam2R_10x}}.
+#'\code{\link{bam2R_10x}}. Alternatively the sparse counts
+#'produced by \code{\link{bam2R_v2}}.
 #'@param patient A character vector associating each cell / entry in
 #'the \code{BaseCount} list with a patient
 #'@param sites Vector specifying genomic regions, defaults to the
 #'entire mitochondrial genome. Excepts a string but may be
-#'included as a GRanges object.
+#'included as a GRanges object. Not needed for the sparse counts
+#'of \code{\link{bam2R_v2}}.
 #'@param MINREADS Minimum number of reads on a site in a single cell
 #'to qualify the site as covered
 #'@param MINCELL Minimum number of cells across the whole data set to
@@ -43,6 +45,23 @@
 #'@param customGenome A GRanges object containing a custom annotation. If
 #'provided, this genome will be used instead of the predefined options
 #'specified by the `genome` parameter. Default is NULL.
+#'@param all.chromosomes Boolean, only for the sparse counts of
+#'\code{\link{bam2R_v2}}. FALSE (default): variants are called on
+#'the mitochondrial chromosome only. TRUE: variants are called on
+#'every site of the counts, on any chromosome. Variants outside of
+#'the mitochondrial chromosome are named with their chromosome,
+#'e.g. chr7:140753336A>T. The thresholds are the same for all
+#'sites, please note that the defaults were chosen for the high
+#'coverage of the mitochondrial genome.
+#'@param reference Only used if \code{all.chromosomes = TRUE}. The
+#'genome that the BAM file was aligned to, either the path of a
+#'FASTA file (an index is created if there is none) or a BSgenome
+#'object. The sequence names have to be identical to the BAM file.
+#'Default NULL: the mitochondrial sites use the \code{genome}
+#'annotation and for all other sites the most abundant nucleotide
+#'is used as reference allele (with a warning: homozygous
+#'variants can not be detected that way and REF/ALT are swapped
+#'where the variant is the majority).
 #'@return A list of \code{\link{mutationCalls}} objects (one for each
 #'\code{patient}) and an entry named \code{exclusionlist}
 #'containing a exclusionlist of sites with variants in several
@@ -66,12 +85,58 @@ mutationCallsFromCohort <- function(BaseCounts,
                                     MINFRAC.OTHER = 0.1,
                                     USE.REFERENCE = TRUE,
                                     genome = 'hg38',
-                                    customGenome = NULL) {
+                                    customGenome = NULL,
+                                    all.chromosomes = FALSE,
+                                    reference = NULL) {
+    if (!isSparseCounts10x(BaseCounts) && (all.chromosomes || !is.null(reference))) {
+        stop('all.chromosomes and reference are only available for the sparse counts',
+             ' of bam2R_v2, the list with one matrix per cell does not know the chromosome.')
+    }
+    if (!all.chromosomes && !is.null(reference)) {
+        stop('reference is only used together with all.chromosomes = TRUE.')
+    }
+    ## sparse counts from bam2R_v2: the sites are part of the counts
+    if (isSparseCounts10x(BaseCounts)) {
+        mito.dna <- NULL
+        if (USE.REFERENCE) {
+            if (!is.null(customGenome)) {
+                mito.dna <- customGenome
+            } else {
+                mito.dna <- switch(genome,
+                                   "hg38" = hg38.dna,
+                                   "hg19" = hg19.dna,
+                                   "mm10" = mm10.dna)
+            }
+        }
+        return(
+            cohort10x(
+                BaseCounts,
+                patient = patient,
+                MINREADS = MINREADS,
+                MINCELL = MINCELL,
+                MINFRAC = MINFRAC,
+                MINCELLS.PATIENT = MINCELLS.PATIENT,
+                MINFRAC.PATIENT = MINFRAC.PATIENT,
+                MINFRAC.OTHER = MINFRAC.OTHER,
+                mito.dna = mito.dna,
+                all.chromosomes = all.chromosomes,
+                reference = reference
+            )
+        )
+    }
     message("Making sure 'sites' parameter is set correctly...")
     if (!length(sites) == 1) {
         stop('Your sites parameter must be a character vector or GRanges object of length 1')
     }
     sites <- GenomicRanges::GRanges(sites)
+    if (length(patient) != length(BaseCounts)) {
+        stop('patient must have one entry per cell (element of BaseCounts): ',
+             length(BaseCounts), ' cells, ', length(patient), ' patients.')
+    }
+    if (GenomicRanges::width(sites) > NROW(BaseCounts[[1]])) {
+        stop('sites covers ', GenomicRanges::width(sites), ' positions, but the counts only have ',
+             NROW(BaseCounts[[1]]), ' rows. Please use the sites that the counts were read with.')
+    }
     ## read in the
     ntcountsArray <- simplify2array(BaseCounts)
     ntcountsArray <- aperm(ntcountsArray, c(1, 3, 2))
@@ -141,10 +206,14 @@ mutationCallsFromCohort <- function(BaseCounts,
     })
     ## merge the variant call matricies
     variant_calls <- do.call(cbind, variant_calls)
+    if (is.null(variant_calls)) {
+        noCandidates10x(MINCELL, MINREADS)
+    }
     ## count number of cell that are mutant per patient
     varcount.bypatient <- sapply(unique(patient), function(pa) {
-        as.integer(colSums(variant_calls[patient == pa, ] == "BOTH" |
-                           variant_calls[patient == pa, ] == "MUT"))
+        ## drop = FALSE: a patient with a single cell crashed before
+        as.integer(colSums(variant_calls[patient == pa, , drop = FALSE] == "BOTH" |
+                           variant_calls[patient == pa, , drop = FALSE] == "MUT"))
     })
     row.names(varcount.bypatient) <- colnames(variant_calls)
     ## total cells per patient
@@ -172,11 +241,12 @@ mutationCallsFromCohort <- function(BaseCounts,
         apply(varcount.bypatient.fraction, 1, function(x)
             sum(x >= MINFRAC.OTHER * max(x))) > 1 &
         rowSums(varcount.bypatient >= MINCELLS.PATIENT) > 1
+    noPatientVariants10x(sum(singlepatient), length(singlepatient), sum(multipatient))
     ## extract mutations that are unique to individual patients
     mutation.bypatient <-
-        colnames(varcount.bypatient)[apply(varcount.bypatient[singlepatient, ], 1, which.max)]
+        colnames(varcount.bypatient)[apply(varcount.bypatient[singlepatient, , drop = FALSE], 1, which.max)]
     ## pull the variant cells
-    variant_calls_selected <- variant_calls[, singlepatient]
+    variant_calls_selected <- variant_calls[, singlepatient, drop = FALSE]
     ## extract the baseCounts for variants of interest
     out <- lapply(unique(patient), function(ptid) {
         ##retrieve matrices of allele counts for patient specific variants
@@ -190,7 +260,8 @@ mutationCallsFromCohort <- function(BaseCounts,
     })
     names(out) <- unique(patient)
     ## extract mutations that are shared in one or more patient for exclusionlist
-    out$exclusionlist <- rownames(varcount.bypatient[multipatient, ])
+    ## drop = FALSE: a single shared variant was lost before
+    out$exclusionlist <- rownames(varcount.bypatient[multipatient, , drop = FALSE])
     out$exclusionlist <-
         gsub("(\\d+)(.+)", "\\1 \\2", out$exclusionlist)
     return(out)
@@ -208,7 +279,9 @@ mutationCallsFromCohort <- function(BaseCounts,
 #' somatic variants (e.g. RNA editing events). These exclusionlists
 #' are created using \code{\link{mutationCallsFromCohort}}
 #'@param BaseCounts A list of base call matrices (one matrix per cell)
-#'as produced by \code{\link{baseCountsFromBamList}}
+#'as produced by \code{\link{baseCountsFromBamList}} or
+#'\code{\link{bam2R_10x}}. Alternatively the sparse counts
+#'produced by \code{\link{bam2R_v2}}.
 #'@param lim.cov Minimal coverage required per cell for a cell to be
 #'classified as covered
 #'@param min.af Minimal allele frequency for a cell to be classified
@@ -272,6 +345,17 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
                                            customDNA = NULL,
                                            ncores = 1,
                                            ...) {
+    ## sparse counts from bam2R_v2: the defaults refer to the number of
+    ## cells, which is the number of columns and not the length of the list
+    sparse <- isSparseCounts10x(BaseCounts)
+    if (sparse) {
+        if (missing(min.num.samples)) {
+            min.num.samples <- 0.01 * ncol(BaseCounts[[1]])
+        }
+        if (missing(universal.var.cells)) {
+            universal.var.cells <- 0.95 * ncol(BaseCounts[[1]])
+        }
+    }
     if (!is.null(customDNA)) {
     # Use custom genome sequence if provided
     mito.dna <- customDNA
@@ -284,6 +368,24 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
     }
     if (!is.null(customDNA) | genome != 'hg38'){
       print('Be aware! The provided exclusionlists are defined based on HUMAN GENOME hg38. Provide custom lists if this is not your genome.')
+    }
+    if (sparse) {
+        return(
+            exclusionlist10x(
+                BaseCounts,
+                lim.cov = lim.cov,
+                min.af = min.af,
+                min.num.samples = min.num.samples,
+                min.af.universal = min.af.universal,
+                universal.var.cells = universal.var.cells,
+                exclusionlists.use = exclusionlists.use,
+                max.var.na = max.var.na,
+                max.cell.na = max.cell.na,
+                mito.dna = mito.dna,
+                ncores = ncores,
+                ...
+            )
+        )
     }
     varaf <- parallel::mclapply(BaseCounts, function(x) {
         ## focus on A,G,C,T
@@ -312,23 +414,24 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
     ## currently you filter at a rate of 10% cells dropping out max
     ##varaf <- varaf[rowSums(is.na(varaf))/length(BaseCounts) < max.fraction.na,]
     varaf <-
-        varaf[rowSums(varaf > min.af, na.rm = TRUE) >= min.num.samples, ]
+        varaf[rowSums(varaf > min.af, na.rm = TRUE) >= min.num.samples, , drop = FALSE]
     
+    ## vapply: an empty list of exclusionlists is allowed
     is.names <-
-        sapply(exclusionlists.use, function(x)
-            typeof(x) == "character")
+        vapply(exclusionlists.use, function(x)
+            typeof(x) == "character", logical(1))
                                         #part 2 - filter based on the exclusionlist
     if (sum(is.names) > 0) {
         removal.names.list <- unique(unlist(exclusionlists.use[is.names]))
-        varaf <- varaf[!row.names(varaf) %in% removal.names.list, ]
+        varaf <- varaf[!row.names(varaf) %in% removal.names.list, , drop = FALSE]
     }
-    if (sum(!is.names) > 0) {
+    if (sum(!is.names) > 0 && nrow(varaf) > 0) {
         removal.ranges.list <-
             unique(unlist(GenomicRanges::GRangesList(exclusionlists.use[!is.names])))
-        varaf <-
-            varaf[-c(S4Vectors::queryHits(
-                                    GenomicRanges::findOverlaps(mut2GR(row.names(varaf)), removal.ranges.list)
-                                )), ]
+        ## (a negative index would drop ALL variants if none of them overlaps)
+        on.list <-
+            S4Vectors::queryHits(GenomicRanges::findOverlaps(mut2GR(row.names(varaf)), removal.ranges.list))
+        varaf <- varaf[!seq_len(nrow(varaf)) %in% on.list, , drop = FALSE]
     }
     ##if(drop.empty){
     ##colSums(varaf,na.rm=TRUE) > 0
@@ -337,12 +440,16 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
     varaf <- varaf[rowSums(varaf, na.rm = TRUE) > 0, , drop = FALSE]
     ## remove variants that are at a certain universal af in a certain number of cells
     varaf <-
-        varaf[!rowSums(varaf >= min.af.universal, na.rm = TRUE) >= universal.var.cells, ]
+        varaf[!rowSums(varaf >= min.af.universal, na.rm = TRUE) >= universal.var.cells, , drop = FALSE]
     ## vars must have less than X % NA's
-    varaf <- varaf[rowSums(is.na(varaf)) < max.var.na * NCOL(varaf), ]
+    varaf <- varaf[rowSums(is.na(varaf)) < max.var.na * NCOL(varaf), , drop = FALSE]
     ## cells must have less than X % NA's
     varaf <-
-        varaf[, colSums(is.na(varaf)) < max.cell.na * NROW(varaf)]
+        varaf[, colSums(is.na(varaf)) < max.cell.na * NROW(varaf), drop = FALSE]
+    if (nrow(varaf) == 0 || ncol(varaf) == 0) {
+        stop('No variant or no cell passed the filters. Try a lower lim.cov, min.af or',
+             ' min.num.samples, or a higher max.var.na or max.cell.na.', call. = FALSE)
+    }
     MN <- pullcountsVars(BaseCounts, rownames(varaf), colnames(varaf))
     mutationCallsFromMatrix(t(MN$M), t(MN$N), ...)
 }
@@ -350,23 +457,35 @@ mutationCallsFromExclusionlist <- function(BaseCounts,
 #'Convert mutation string to GRanges
 #'
 #'@param mut The mutation to convert to a GRanges in the format of
-#'"position reference>alternate".
+#'"position reference>alternate". The chromosome may be given in
+#'front, e.g. "chr7:140753336 A>T", variants without a chromosome
+#'are located on chrM.
 #'@return Returns a GRanges object containg the site of the variant
 #'along with reference/alternate allele data in the metacolumns
 #'@examples mutation.as.granges <- mut2GR('1434 G>A')
 #'@examples mutation.as.granges.no.space <- mut2GR('1434G>A')
+#'@examples mutation.on.chr7 <- mut2GR('chr7:140753336 A>T')
 #'@export
 mut2GR <- function(mut) {
-    gr <-
-        GenomicRanges::GRanges(paste0('chrM:', as.numeric(gsub(
-                                                   " *[A-Z].*", "", mut
-                                               ))))
+    ## an optional chromosome in front of the position (the chromosome
+    ## name may contain a colon itself, e.g. HLA-A*01:01:25 C>T)
+    pattern <- "^(.*):([0-9]+ *[A-Za-z]+>[A-Za-z]+)$"
+    has.chr <- grepl(pattern, mut)
+    chr <- ifelse(has.chr, sub(pattern, "\\1", mut), 'chrM')
+    site <- ifelse(has.chr, sub(pattern, "\\2", mut), mut)
+    pos <- as.numeric(gsub(" *[A-Z].*", "", site))
+    if (all(chr == 'chrM')) {
+        gr <- GenomicRanges::GRanges(paste0('chrM:', pos))
+    } else {
+        gr <- GenomicRanges::GRanges(seqnames = chr, ranges = paste0(pos, '-', pos))
+    }
+    names(site) <- mut
     gr$ref <-
-        sapply(mut, function(x) {
+        sapply(site, function(x) {
             unlist(strsplit(gsub("\\d+ *", "", x), ">"))[[1]]
         })
     gr$alt <-
-        sapply(mut, function(x) {
+        sapply(site, function(x) {
             unlist(strsplit(gsub("\\d+ *", "", x), ">"))[[2]]
         })
     return(gr)
@@ -375,7 +494,9 @@ mut2GR <- function(mut) {
 #'Pull variant counts
 #'
 #'@param BaseCounts A list of base call matrices (one matrix per cell)
-#'as produced by \code{\link{baseCountsFromBamList}}
+#'as produced by \code{\link{baseCountsFromBamList}}. Alternatively
+#'the sparse counts produced by \code{\link{bam2R_v2}}, see
+#'\code{\link{pullcountsVars10x}}.
 #'@param vars Character vector of variants to pull, in format 5643G>T
 #'@param cells Character vector for cells to select, or NULL if all
 #'cells from the input are to be used
@@ -386,7 +507,26 @@ mut2GR <- function(mut) {
 #'counts.known.vars <- pullcountsVars(example.counts, vars=known.variants)
 #'@export
 pullcountsVars <- function(BaseCounts, vars, cells = NULL) {
+    ## sparse counts from bam2R_v2
+    if (isSparseCounts10x(BaseCounts)) {
+        return(pullcountsVars10x(BaseCounts, vars, cells))
+    }
+    bad <- !grepl("^(.+:)?[0-9]+ *[A-Z]>[A-Z]$", vars)
+    if (any(bad)) {
+        stop('Variants must be given as position reference>alternate, e.g. 1434 G>A or',
+             ' 1434G>A. Not understood: ', paste(utils::head(vars[bad], 3), collapse = ', '))
+    }
     var.gr <- mut2GR(vars)
+    if (length(BaseCounts) > 0 && max(GenomicRanges::start(var.gr)) > NROW(BaseCounts[[1]])) {
+        stop('The variant position ', max(GenomicRanges::start(var.gr)), ' is behind the end of',
+             ' the counts (', NROW(BaseCounts[[1]]), ' positions).')
+    }
+    ## the list with one matrix per cell only contains the mitochondrial genome
+    if (any(as.character(GenomicRanges::seqnames(var.gr)) != 'chrM')) {
+        stop('The base counts (one matrix per cell) only contain the mitochondrial genome.',
+             ' Use the sparse counts of bam2R_v2 or baseCountsFromBamList_v2 for variants',
+             ' on other chromosomes.')
+    }
     ## subset cells of interest if appropriate
     if (!is.null(cells)) {
         message('Subsetting for specific cells...')
@@ -413,10 +553,10 @@ pullcountsVars <- function(BaseCounts, vars, cells = NULL) {
         rowSums(cell[GenomicRanges::start(var.gr), c('A', 'G', 'C', 'T'), drop =
                                                                               FALSE])
     })
-    if (!is.matrix(M) | !is.matrix(N)) {
-        M <- matrix(M, ncol = length(M), dimnames = list(vars, names(M)))
-        N <- matrix(N, ncol = length(N), dimnames = list(vars, names(N)))
-    }
+    ## always variants x cells, also for a single variant (the cell
+    ## names were changed in that case before)
+    M <- matrix(M, nrow = length(vars), dimnames = list(vars, names(BaseCounts)))
+    N <- matrix(N, nrow = length(vars), dimnames = list(vars, names(BaseCounts)))
     ## maintain consistency with previous code for N by excluding the mutant allele calls
     N <- N - M
     rownames(M) <- row.names(N) <- vars

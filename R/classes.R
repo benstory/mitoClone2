@@ -80,6 +80,11 @@ mutationCallsFromMatrix <- function(M,
                                     cluster = NULL,
                                     metadata = data.frame(row.names = rownames(M)),
                                     binarize = 0.05) {
+    if (!identical(dim(as.matrix(M)), dim(as.matrix(N)))) {
+        stop('M and N must have the same dimensions (cells x variants): M is ',
+             paste(dim(as.matrix(M)), collapse = ' x '), ', N is ',
+             paste(dim(as.matrix(N)), collapse = ' x '), '.')
+    }
     colnames(M) <- make.names(colnames(M))
     colnames(N) <- make.names(colnames(N))
     binfun <- function(M, N) {

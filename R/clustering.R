@@ -56,6 +56,11 @@ varCluster <- function(mutcalls,
     suppressWarnings(dir.create(tempfolder))
     
     usedata <- mutcalls@ternary[, mutcalls@cluster]
+    if (NCOL(usedata) < 2) {
+        stop('varCluster needs at least 2 variants that are used for the clustering',
+             ' (cluster = TRUE), found ', NCOL(usedata), '. See the cluster argument of',
+             ' mutationCallsFromMatrix and setVarsCandidate.')
+    }
     if (!method %in% c('PhISCS', 'SCITE')) {
         message('No method selected, defaulting to SCITE')
         method <- 'SCITE'
@@ -546,6 +551,9 @@ clusterMetaclones <- function(mutcalls,
 }
 
 
+## column used inside ggplot2::aes() in mitoPlot
+utils::globalVariables("gene")
+
 #'Plot clone-specific variants in circular plots
 #'
 #'@param variants Character vector of variants to plot in format
@@ -577,6 +585,9 @@ mitoPlot <- function(variants,
                      showLegend = TRUE,
                      showLabel = TRUE) {
     mito.var <- mut2GR(variants)
+    if (any(as.character(GenomicRanges::seqnames(mito.var)) != 'chrM')) {
+        stop('mitoPlot only shows mitochondrial variants (format: 1337 G>A).')
+    }
     if (!is.null(customGenome)) {
       # Use custom genome if provided
       mito.gr <- customGenome
@@ -587,6 +598,11 @@ mitoPlot <- function(variants,
                         "mm10" = mm10.mito)
     }
     mito.gr <- mito.gr[mito.gr$gene_biotype != 'Mt_tRNA']
+    ## recent GenomicRanges versions turn the names of a GRanges into a
+    ## 'names' column when converting to a data.frame, the variants have
+    ## no names, so drop them to keep the columns of both tables identical
+    names(mito.gr) <- NULL
+    names(mito.var) <- NULL
     S4Vectors::mcols(mito.gr) <-
         S4Vectors::mcols(mito.gr)[, c('external_gene_name'), drop = FALSE]
     mito.genes.df <-
@@ -648,7 +664,7 @@ mitoPlot <- function(variants,
     mito.plot.df <- subset(plot.df,plot.df$type == 'mito')
     p <- ggplot2::ggplot(data=mito.plot.df, ggplot2::aes(x = start, y=12, color=gene)) +
       ggplot2::geom_hline(yintercept=12, color = "black",alpha=1) +
-      ggplot2::geom_line(size=4) +
+      ggplot2::geom_line(linewidth=4) +
       ggplot2::theme_void(base_size=24) + ggplot2::xlab('') +
       ggplot2::ylab('') +
       ggplot2::theme(legend.position = legendPos, axis.text.x = ggplot2::element_blank()) +

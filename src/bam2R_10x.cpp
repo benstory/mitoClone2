@@ -13,6 +13,7 @@
   
 #include <iostream>
 #include <vector>
+#include <string>
 #include <stdio.h>
 #include <string.h>
 #include "htslib/sam.h"
@@ -82,9 +83,9 @@
       }
       
       //int tid = bam_name2id(head, ref);
-      char *region = (char*) malloc(sizeof(ref) + sizeof(":") + sizeof("-") + (sizeof(char)*50));
-      sprintf(region, "%s:%d-%d", ref, beg, end);
-      hts_itr_t *iter = sam_itr_querys(idx, head, region);
+      // std::string instead of sprintf: no fixed size buffer (R CMD check warns about sprintf)
+      std::string region = std::string(ref) + ":" + std::to_string(beg) + "-" + std::to_string(end);
+      hts_itr_t *iter = sam_itr_querys(idx, head, region.c_str());
       
       int result;
       while ((result = sam_itr_next(in, iter, b)) >= 0) {
@@ -98,12 +99,11 @@
           }
         }
       }
-      
-      free(region);
+
       sam_itr_destroy(iter);
       hts_idx_destroy(idx);
     }
-    
+
     // Filter map to only keep barcodes with sufficient counts
     std::map<std::string, int> valid_barcodes;
     int barcodes_over_threshold = 0;
@@ -128,6 +128,34 @@
     hts_close(in);
     
     return valid_barcodes;
+  }
+  
+  // max.mismatches filter, checked for every read: reads without an NM tag are kept
+  // (previously only the first read of the file was checked for an NM tag, which crashed R
+  // when a later read had none, or switched the filter off when the first read had none)
+  static bool nm_ok(const bam1_t *b, int maxmismatches) {
+    if (maxmismatches == -1) return true;
+    uint8_t *nm = bam_aux_get(b, "NM");
+    return !nm || bam_aux2i(nm) <= maxmismatches;
+  }
+  
+
+  // "Invalid sequence X" plus the sequence names of the file, so that a chrM / MT mixup is
+  // obvious. Written into buf (size bytes).
+  static void invalid_sequence_message(char* buf, size_t size, const char* ref, const bam_hdr_t* head) {
+    size_t n = (size_t) snprintf(buf, size, "Invalid sequence %s. ", ref);
+    const char* mito = NULL;
+    for (int t = 0; t < head->n_targets; t++) {
+      const char* name = head->target_name[t];
+      if (!strcmp(name, "chrM") || !strcmp(name, "MT") || !strcmp(name, "M") || !strcmp(name, "chrMT")) mito = name;
+    }
+    if (mito && n < size)
+      n += (size_t) snprintf(buf + n, size - n, "The mitochondrial genome is called %s in this file (e.g. sites = \"%s:1-16569\"). ", mito, mito);
+    if (n < size) n += (size_t) snprintf(buf + n, size - n, "The file contains: ");
+    for (int t = 0; t < head->n_targets && t < 10 && n < size; t++)
+      n += (size_t) snprintf(buf + n, size - n, "%s%s", t ? ", " : "", head->target_name[t]);
+    if (head->n_targets > 10 && n < size)
+      snprintf(buf + n, size - n, ", ... (%d sequences)", head->n_targets);
   }
   
   extern "C" {
@@ -201,7 +229,10 @@
                 //counts[s + len * nttable.nt_idx['^']]++;
                 dic[rg][count_offset + s + len * nttable.nt_idx['^']]++;
               }
-              if(p->qpos < nttable.head_clip || (bam_is_rev(p->b) && ((bam1_core_t)p->b->core).l_qseq - p->qpos < nttable.head_clip)){
+              // distance to the 5' end (head) of the read: for reverse reads that is the END of the
+              // stored sequence (previously the wrong end of reverse reads was clipped, one base too few)
+              int from_head = bam_is_rev(p->b) ? p->b->core.l_qseq - 1 - p->qpos : p->qpos;
+              if(from_head < nttable.head_clip){
                 //counts[s + len * nttable.nt_idx['N']]++;
                 //ADD N's
                 dic[rg][count_offset + s + len * nttable.nt_idx['N']]++;
@@ -298,13 +329,13 @@
       nttable.in = hts_open(bamfile, "r");
       uint8_t *paux = bam_aux_get(b, "NM");
       if ( ! paux && *maxmismatches != -1 ) {
-        Rf_warning("BAM/CRAM is missing NM tag, ignoring max.mismatches argument.\n");
+        Rf_warning("The first read has no NM tag: reads without an NM tag are not filtered by max.mismatches.\n");
         //return Rf_ScalarLogical(FALSE);
       }
       if (strcmp(ref, "") == 0) { // if a region is not specified
         //Replicate sampileup functionality (uses above mask without supplementary)
         while((ret = sam_read1(nttable.in, head, b)) >= 0){
-          if ((b->core.flag & *mask)==0 && b->core.qual >= *mq && (b->core.flag & *keepflag)==*keepflag && ((paux && bam_aux2i(bam_aux_get(b,"NM")) <= *maxmismatches ) || !paux || *maxmismatches == -1)){	 
+          if ((b->core.flag & *mask)==0 && b->core.qual >= *mq && (b->core.flag & *keepflag)==*keepflag && nm_ok(b, *maxmismatches)){	 
             bam_plp_push(buf, b);
           };
           while ( (pl=bam_plp_next(buf, &tid, &pos, &n_plp)) != 0) {
@@ -322,20 +353,21 @@
         }
         tid = bam_name2id(head, ref);
         if (tid < 0) {
-          Rf_error("Invalid sequence %s\n", ref);
+          char msg[1024];
+          invalid_sequence_message(msg, sizeof(msg), ref, head);
+          Rf_error("%s\n", msg);
           return Rf_ScalarLogical(FALSE);//return 1;
         }
-        char *region = NULL;
-        region = (char*) malloc(sizeof(ref)+sizeof(":")+sizeof("-")+(sizeof(char)*50));      
-        sprintf(region,"%s:%d-%d",ref,nttable.beg,nttable.end);
+        // std::string instead of sprintf: no fixed size buffer (R CMD check warns about sprintf)
+        std::string region = std::string(ref) + ":" + std::to_string(nttable.beg) + "-" + std::to_string(nttable.end);
         if(*verbose){
-          Rprintf("Reading %s at coordinates %s.\n", bamfile, region);
+          Rprintf("Reading %s at coordinates %s.\n", bamfile, region.c_str());
         }
         //Implement a fetch style iterator
-        hts_itr_t *iter = sam_itr_querys(idx, head, region);
+        hts_itr_t *iter = sam_itr_querys(idx, head, region.c_str());
         int result;
         while ((result = sam_itr_next(nttable.in, iter, b)) >= 0) {
-          if ((b->core.flag & *mask)==0 && b->core.qual >= *mq && (b->core.flag & *keepflag)==*keepflag && ((paux && bam_aux2i(bam_aux_get(b,"NM")) <= *maxmismatches ) || !paux || *maxmismatches == -1)){
+          if ((b->core.flag & *mask)==0 && b->core.qual >= *mq && (b->core.flag & *keepflag)==*keepflag && nm_ok(b, *maxmismatches)){
             bam_plp_push(buf, b);
           };
           while ( (pl=bam_plp_next(buf, &tid, &pos, &n_plp)) != 0) {
@@ -346,11 +378,10 @@
           Rf_error("Error code (%d) encountered reading sam iterator.\n", result);
           return Rf_ScalarLogical(FALSE);//return 1;
         }
-        free(region);
         sam_itr_destroy(iter);
         hts_idx_destroy(idx);
       }
-      
+
       bam_plp_push(buf,0); // finalize pileup
       
       while ( (pl=bam_plp_next(buf, &tid, &pos, &n_plp)) != 0) {

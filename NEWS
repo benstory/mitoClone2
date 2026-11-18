@@ -1,3 +1,33 @@
+\section{Version 1.19.1}{\itemize{
+\item
+Added bam2R_v2(): sparse per-cell nucleotide counts, any number of regions on any chromosome in one pass, strands reported separately, optional UMI counting (umi.tag)
+\item
+Added baseCountsFromBamList_v2(): sparse counts from one BAM file per cell (e.g. Smart-seq2), any number of regions on any chromosome, no deepSNV needed; identical counts to baseCountsFromBamList()
+\item
+mut2GR() and removeWindow() accept variants with a chromosome (e.g. chr7:140753336 A>T); variants without one are on chrM as before
+\item
+Added bam2R_10x_v2() (dense output, same format as bam2R_10x), pullcountsVars10x() and strandBias10x()
+\item
+mutationCallsFromExclusionlist(), mutationCallsFromCohort() and pullcountsVars() accept the sparse counts of bam2R_v2() directly and return the same result as for the dense counts
+\item
+mutationCallsFromCohort(): new option all.chromosomes = TRUE to call variants on every chromosome of the sparse counts (default FALSE: mitochondrial chromosome only), with the reference alleles from a FASTA file or BSgenome object (reference)
+\item
+New vignette "Sparse counts for large 10x datasets" (reading, variant calling and plotting with bam2R_v2)
+\item
+Fixed for the dense counts: mutationCallsFromExclusionlist() failed if a single variant passed the filters, with an empty exclusionlists.use, and dropped all variants if none overlapped the exclusionlists; pullcountsVars() changed the cell names for a single variant; mutationCallsFromCohort() lost a single variant shared between patients from the exclusionlist, and failed for a patient with a single cell
+\item
+Clear error and warning messages for common mistakes: wrong chromosome name (the message names the one of the BAM file), wrong barcode or UMI tag, no cell or no variant passing the thresholds (naming the parameter to change), patient vector of the wrong length, malformed variants, M/N of different size, varCluster with fewer than 2 variants. Results are unchanged.
+\item
+Fixed mitoPlot() with recent GenomicRanges versions
+\item
+Removed sprintf from the compiled code
+\item
+Fixed head.clip: the 5' end of reverse reads is clipped now (before, the wrong end of reverse reads was clipped and one base too few), changes results only if head.clip > 0
+\item
+Fixed bam2R_10x crashing R when max.mismatches is set and only some reads have an NM tag
+\item
+Documentation: nucleotides with Q <= q are masked (the code always did this, the docs said Q < q)
+}}
 \section{Version 1.15.3}{\itemize{
 \item
 Added vireo implementation
