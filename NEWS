@@ -1,4 +1,4 @@
-\section{Version 1.19.1}{\itemize{
+\section{Version 1.19.2}{\itemize{
 \item
 Added bam2R_v2(): sparse per-cell nucleotide counts, any number of regions on any chromosome in one pass, strands reported separately, optional UMI counting (umi.tag)
 \item
@@ -18,15 +18,19 @@ Fixed for the dense counts: mutationCallsFromExclusionlist() failed if a single 
 \item
 Clear error and warning messages for common mistakes: wrong chromosome name (the message names the one of the BAM file), wrong barcode or UMI tag, no cell or no variant passing the thresholds (naming the parameter to change), patient vector of the wrong length, malformed variants, M/N of different size, varCluster with fewer than 2 variants. Results are unchanged.
 \item
-Fixed mitoPlot() with recent GenomicRanges versions
-\item
-Removed sprintf from the compiled code
-\item
 Fixed head.clip: the 5' end of reverse reads is clipped now (before, the wrong end of reverse reads was clipped and one base too few), changes results only if head.clip > 0
 \item
 Fixed bam2R_10x crashing R when max.mismatches is set and only some reads have an NM tag
 \item
 Documentation: nucleotides with Q <= q are masked (the code always did this, the docs said Q < q)
+\item
+BiocCheck: removed a commented-out exportPattern from NAMESPACE, BugReports field, CITATION readable without a declared encoding, documented the return value of vireo(), examples use getAlleleCount() instead of the slots
+}}
+\section{Version 1.19.1}{\itemize{
+\item
+Fixed mitoPlot() with recent GenomicRanges versions
+\item
+Removed sprintf from the compiled code
 }}
 \section{Version 1.15.3}{\itemize{
 \item

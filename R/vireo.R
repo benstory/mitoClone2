@@ -344,7 +344,7 @@ fit.vireo <- function(model, ad, dp, max.iter = 200, min.iter = 5,
 #' @param ... Additional arguments passed to vireo.filter
 #' @return Best fitted Vireo model
 #' @examples load(system.file("extdata/LudwigFig7.Rda", package = "mitoClone2"))
-#' test.data <- list(N = as.matrix(t(LudwigFig7@N)), M = as.matrix(t(LudwigFig7@M)))
+#' test.data <- list(N = as.matrix(t(getAlleleCount(LudwigFig7, "nonmutant"))), M = as.matrix(t(getAlleleCount(LudwigFig7, "mutant"))))
 #' vireoModel <- vireoFit(test.data, n.donor = 9, filter.variants = FALSE, min_cells_per_sample = 5)
 #' @export
 vireoFit <- function(data, n.donor, n.gt = 3, learn.gt = TRUE,
@@ -406,7 +406,7 @@ vireoFit <- function(data, n.donor, n.gt = 3, learn.gt = TRUE,
 #' @return Data frame with cell assignments and probabilities
 #' @examples
 #' load(system.file("extdata/LudwigFig7.Rda", package = "mitoClone2"))
-#' test.data <- list(N = as.matrix(t(LudwigFig7@N)), M = as.matrix(t(LudwigFig7@M)))
+#' test.data <- list(N = as.matrix(t(getAlleleCount(LudwigFig7, "nonmutant"))), M = as.matrix(t(getAlleleCount(LudwigFig7, "mutant"))))
 #' vireoModel <- vireoFit(test.data, n.donor = 9, filter.variants = FALSE, min_cells_per_sample = 5)
 #' cellAssignments <- predictCellAssignment(vireoModel, threshold = 0.9)
 #' @export

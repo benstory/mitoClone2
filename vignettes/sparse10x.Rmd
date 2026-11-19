@@ -251,7 +251,7 @@ vars.exclusions <- calls[["exclusionlist"]]
 vars.exclusions
 calls[["exclusionlist"]] <- NULL
 #-- one mutationCalls object per patient: cells x variants
-sapply(calls, function(x) dim(x@M))
+sapply(calls, function(x) dim(getAlleleCount(x, "mutant")))
 ```
 
 The names of the variants were made syntactically valid by R. A small helper
@@ -264,7 +264,7 @@ fixvarName <- function(x) {
     x <- sub("\\.?([ACGT])\\.([ACGT])$", "\\1>\\2", x)
     sub("^(.+)\\.([0-9]+[ACGT]>[ACGT])$", "\\1:\\2", x)
 }
-candidates <- lapply(calls, function(x) fixvarName(names(x@cluster)))
+candidates <- lapply(calls, function(x) fixvarName(names(getVarsCandidate(x))))
 candidates
 ```
 
@@ -428,7 +428,7 @@ Here we apply it to the cells of patient P1.
 ```{r exclusionlist}
 counts.p1 <- lapply(counts, function(x) x[, patient == "P1"])
 calls.p1 <- mutationCallsFromExclusionlist(counts.p1, min.af = 0.1, min.num.samples = 10)
-from.exclusionlist <- fixvarName(names(calls.p1@cluster))
+from.exclusionlist <- fixvarName(names(getVarsCandidate(calls.p1)))
 #-- variants of the cohort method that are found again
 table(found = p1.mito %in% from.exclusionlist)
 #-- variants that are only reported by the exclusionlist method

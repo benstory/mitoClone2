@@ -9,7 +9,7 @@ vignette: >
 ---
 
 ## Before you begin
-```{r results='hide', message=FALSE, warning=FALSE}
+```{r load-package, results='hide', message=FALSE, warning=FALSE}
 library(mitoClone2)
 ```
 
@@ -21,7 +21,7 @@ data is available from two patients (P1, P2) as part of this package.
 Only P1 is analyzed as part of this vignette but the commented code
 for P2 should be fully functional.
 
-```{r, include = FALSE}
+```{r knitr-options, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",

@@ -2,7 +2,7 @@ Package: mitoClone2
 Type: Package
 Title: Clonal Population Identification in Single-Cell RNA-Seq Data using Mitochondrial and Somatic Mutations
 LinkingTo: Rhtslib (>= 1.13.1)
-Version: 1.19.1
+Version: 1.19.2
 Authors@R: c( person(given = "Benjamin", family = "Story", role = c("aut", "cre"), email = "story.benjamin@gmail.com"),
 	   person(given = "Lars", family = "Velten", role = "aut"),
 	   person(given = "Gregor", family = "Mönke", role = "aut") )
@@ -17,7 +17,7 @@ Imports: reshape2, GenomicRanges, pheatmap, deepSNV, grDevices, Matrix,
         graphics, stats, utils, S4Vectors, Rhtslib, parallel, methods, ggplot2
 Suggests: knitr, rmarkdown, Biostrings, testthat, ComplexHeatmap, viridis
 RoxygenNote: 7.1.0
-SystemRequirements: GNU make, PhISCS (optional)
+SystemRequirements: GNU make, zlib, libbz2, liblzma, libcurl (for Rhtslib), PhISCS (optional)
 Depends: R (>= 4.4.0)
 NeedsCompilation: yes
 URL: https://github.com/benstory/mitoClone2

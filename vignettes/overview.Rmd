@@ -32,7 +32,7 @@ pre-constructed exclusionlists including information related to
 homo-polymers, repeat regions, RNA editing sites, and known sequencing
 artifacts.
 
-```{r results='hide', message=FALSE, warning=FALSE}
+```{r load-package, results='hide', message=FALSE, warning=FALSE}
 library(mitoClone2)
 ```
 
